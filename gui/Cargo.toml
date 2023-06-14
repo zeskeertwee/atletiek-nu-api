@@ -1,0 +1,20 @@
+[package]
+name = "atletiek-nu-gui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eframe = { version = "0.21.3", features = ["wgpu"] }
+egui = "0.21.0"
+egui_extras = "0.21.0"
+pretty_env_logger = "0.4.0"
+log = "0.4.17"
+atletiek_nu_api = { path = "../atletiek-nu-api" }
+poll-promise = "0.2.0"
+anyhow = "1.0.70"
+
+[dependencies.egui-datepicker]
+git = "https://github.com/zeskeertwee/egui-datepicker"
+rev = "4a542343bee8feec79dabea119453c985584b1c2"

@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+	"atletiek-nu-api",
+	"test-cli",
+	"gui"
+]
