@@ -1,18 +1,19 @@
 use anyhow::bail;
 use regex::Regex;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
 
 const REGEX_EVENT: &'static str =
     r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d]{0,})/"#;
 // Group 1: pos or neg sign, group 2: wind speed
 const REGEX_WIND: &'static str = r#"([+-])([\d]{1,}.[\d]{1,})m/s"#;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
     pub results: Vec<EventResult>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventResult {
     pub event_name: String,
     pub result: f64,

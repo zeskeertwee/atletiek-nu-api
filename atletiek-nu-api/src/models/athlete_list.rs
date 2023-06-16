@@ -1,5 +1,6 @@
 use regex::Regex;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
 
 // Captures the age (just the digits) in the first capture group, and the club name in the second capture group
 const REGEX_AGE_AND_CLUB: &'static str = r#"([\d]{1,3}) years \| ([\s\S]{1,})"#;
@@ -8,7 +9,7 @@ const REGEX_ATHLETE_ID: &'static str = r#"koppel_id=([\d]{1,})"#;
 
 pub type AthleteList = Vec<AthleteListElement>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteListElement {
     pub id: u32,
     pub name: String,

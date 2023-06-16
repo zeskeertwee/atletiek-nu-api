@@ -1,13 +1,14 @@
 use crate::util::clean_html;
 use regex::Regex;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
 
 // Captures the amount of registrations in the first capture group
 const REGEX_REGISTRATIONS: &'static str = "([0-9]{1,}) registrations";
 
 pub type CompetitionsList = Vec<CompetitionsListElement>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompetitionsListElement {
     // TODO: Country & date and maybe WA-label?
     pub id: u32,

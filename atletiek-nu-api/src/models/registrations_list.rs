@@ -1,5 +1,6 @@
 use regex::Regex;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
 
 // Captures the ID in the first capture group
 const REGEX_PARTICIPANT_ID: &'static str = r#"deelnemer_id=([\d]{1,})"#;
@@ -9,7 +10,7 @@ const REGEX_CATEGORY_CLUB_AND_TEAM: &'static str =
 
 pub type RegistrationsList = Vec<RegistrationsListElement>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegistrationsListElement {
     pub participant_id: u32,
     pub name: String,

@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use regex::Regex;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
 
 const REGEX_COMPETITION_ID: &'static str = r#"(\d{1,})"#;
 // 1: day of month, 2: month (MAR, AUG, etc.), 3: year
@@ -9,7 +10,7 @@ const REGEX_REGISTRATIONS: &'static str = r#"(\d{0,}) athletes"#;
 
 pub type CompetitionsWebList = Vec<CompetitionsListWebElement>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompetitionsListWebElement {
     pub date: NaiveDate,
     pub name: String,
