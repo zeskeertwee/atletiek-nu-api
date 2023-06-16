@@ -107,6 +107,7 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
                 for (k, v) in headers {
                     resp.raw_header(k, v);
                 }
+                resp.raw_header("Content-Type", "Application/json");
             }
             _ => (),
         }

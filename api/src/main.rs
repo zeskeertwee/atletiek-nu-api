@@ -1,5 +1,6 @@
 mod cache;
 mod get_registrations;
+mod get_results;
 mod search_competitions;
 mod util;
 
@@ -57,6 +58,7 @@ async fn main() -> Result<(), rocket::Error> {
             "/competitions/registrations",
             routes![get_registrations::get_registrations],
         )
+        .mount("/competitions/results", routes![get_results::get_results])
         .manage(cache)
         .ignite()
         .await?

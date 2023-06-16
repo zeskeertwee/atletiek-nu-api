@@ -21,6 +21,9 @@ pub enum CachedRequest {
     GetCompetitionRegistrations {
         id: u32,
     },
+    GetCompetitionResults {
+        id: u32,
+    },
 }
 
 impl CachedRequest {
@@ -47,10 +50,15 @@ impl CachedRequest {
         Self::GetCompetitionRegistrations { id }
     }
 
+    pub fn new_get_results(id: u32) -> Self {
+        Self::GetCompetitionResults { id }
+    }
+
     fn cache_duration(&self) -> Duration {
         match self {
             Self::SearchCompetitions { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionRegistrations { .. } => Duration::from_secs(HOUR_IN_S * 12),
+            Self::GetCompetitionResults { .. } => Duration::from_secs(HOUR_IN_S * 24),
         }
     }
 
@@ -75,6 +83,9 @@ impl CachedRequest {
                     .await
                     .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
+            Self::GetCompetitionResults { id } => atletiek_nu_api::get_athlete_event_result(*id)
+                .await
+                .map(|v| rocket::serde::json::to_string(&v).unwrap()),
         } {
             Ok(v) => {
                 cache.insert(self, v.clone());
