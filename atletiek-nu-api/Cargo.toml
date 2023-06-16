@@ -13,5 +13,5 @@ regex = "1.7.3"
 urlencoding = "2.1.2"
 lazy_static = "1.4.0"
 arc-swap = "1.6.0"
-chrono = "0.4.26"
+chrono = { version = "0.4.26", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
