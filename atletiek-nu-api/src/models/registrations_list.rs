@@ -1,3 +1,4 @@
+use crate::util::clean_html;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -53,24 +54,32 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
             .collect();
 
         let name = info_texts[0].trim().replace("  ", " ");
-        let cat_and_club = info_texts[info_texts.len() - 1];
+        let cat_and_club = info_texts[1];
 
-        let (category, club_name, team_name) =
-            match re_cat_club_and_team.captures_iter(cat_and_club).next() {
+        let (category, club_name, mut team_name) =
+            match re_cat_club_and_team.captures_iter(&cat_and_club).next() {
                 Some(x) => (
                     x[1].trim().replace("  ", " ").to_string(),
                     x[2].trim().replace("  ", " ").to_string(),
                     Some(x[3].trim().replace("  ", " ").to_string()),
                 ),
                 None => {
-                    let captures = re_cat_and_club.captures_iter(cat_and_club).next().unwrap();
+                    let captures = re_cat_and_club.captures_iter(&cat_and_club).next().unwrap();
                     (
                         captures[1].trim().replace("  ", " ").to_string(),
-                        captures[2].trim().replace("  ", " ").to_string(),
+                        captures[2]
+                            .trim()
+                            .replace("|", "")
+                            .replace("  ", " ")
+                            .to_string(),
                         None,
                     )
                 }
             };
+
+        if info_texts.len() == 3 {
+            team_name = Some(info_texts[2].to_string());
+        }
 
         let events: Vec<String> = event_element
             .text()

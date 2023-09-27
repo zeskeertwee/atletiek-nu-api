@@ -37,7 +37,9 @@ pub fn set_request_callback(
 }
 
 pub async fn send_request(url: &str) -> anyhow::Result<String> {
-    let client = ClientBuilder::new().build()?;
+    let client = ClientBuilder::new()
+        .danger_accept_invalid_certs(true)
+        .build()?;
     let req = client
         .get(url)
         // Without this header the sortData spans are gone so it needs to be here

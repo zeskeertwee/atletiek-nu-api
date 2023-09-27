@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use anyhow::bail;
 use regex::Regex;
 use scraper::{Html, Selector};
@@ -16,9 +17,19 @@ pub struct AthleteEventResults {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventResult {
     pub event_name: String,
-    pub result: f64,
     pub event_url: String,
-    pub wind_speed: Option<f64>,
+    pub items: Vec<EventResultItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum EventResultItem {
+    Position {
+        position: u16,
+    },
+    Measurement {
+        wind_speed: Option<f64>,
+        result: f64,
+    },
 }
 
 /// Expects the DESKTOP site
@@ -41,15 +52,30 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
 
     for row in table.select(&row_selector) {
         let mut fields = row.select(&row_element_selector);
-        dbg!(row.html());
+        //dbg!(row.html());
 
         let event_td = fields.next().unwrap();
         let event = event_td.select(&a_selector).next().unwrap();
         let href = event.value().attr("href").unwrap();
         let event_name = re_event.captures_iter(href).next().unwrap()[1].to_string();
-        dbg!(&event_name);
+        //dbg!(&event_name);
 
-        for i in fields {
+        let fields: Vec<(usize, scraper::ElementRef)> = fields.enumerate().collect();
+        let len = fields.len();
+        for (idx, i) in fields {
+            if idx + 1 == len {
+                // position
+                results.push(EventResult {
+                    event_name: event_name.clone(),
+                    event_url: href.to_string(),
+                    items: vec![EventResultItem::Position {
+                        position: i.text().next().unwrap().parse().unwrap(),
+                    }],
+                });
+
+                continue;
+            }
+
             let data_element = match i.select(&data_span_selector).next() {
                 None => {
                     continue;
@@ -69,7 +95,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 // invalid
                 data = f64::NAN;
             }
-            dbg!(data);
+            //dbg!(data);
 
             let wind_speed =
                 if let Some(captures) = re_wind.captures_iter(&visible_element.html()).next() {
@@ -83,16 +109,44 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                     None
                 };
 
-            dbg!(wind_speed);
+            //dbg!(wind_speed);
 
             results.push(EventResult {
-                result: data,
                 event_name: event_name.clone(),
                 event_url: href.to_string(),
-                wind_speed,
+                items: vec![EventResultItem::Measurement {
+                    result: data,
+                    wind_speed,
+                }],
             })
         }
     }
 
-    Ok(AthleteEventResults { results })
+    let mut res_map: HashMap<String, Vec<EventResult>> = HashMap::new();
+
+    for i in results {
+        match res_map.contains_key(&i.event_url) {
+            true => { res_map.get_mut(&i.event_url).unwrap().push(i); },
+            false => { res_map.insert(i.event_url.clone(), vec![i]); },
+        }
+    }
+
+    let mut res: Vec<EventResult> = Vec::new();
+    for (_, results) in res_map.into_iter() {
+        let name = results[0].event_name.clone();
+        let url = results[0].event_url.clone();
+        let mut items = Vec::new();
+        for i in results {
+            items.extend(i.items);
+        }
+
+        res.push(EventResult {
+            event_name: name,
+            event_url: url,
+            items
+        })
+    }
+
+
+    Ok(AthleteEventResults { results: res })
 }

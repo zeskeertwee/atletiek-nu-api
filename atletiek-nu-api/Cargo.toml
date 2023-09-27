@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-scraper = "0.16.0"
+scraper = { version = "0.16.0", features = ["deterministic"] }
 reqwest = { version = "0.11.16", features = ["blocking"] }
 anyhow = "1.0.70"
 regex = "1.7.3"
@@ -15,3 +15,10 @@ lazy_static = "1.4.0"
 arc-swap = "1.6.0"
 chrono = { version = "0.4.26", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
+
+[dev-dependencies]
+criterion = { version = "0.5.1" }
+
+[[bench]]
+name = "scraping"
+harness = false

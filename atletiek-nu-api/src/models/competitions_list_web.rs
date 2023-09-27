@@ -42,27 +42,32 @@ pub fn parse(html: Html) -> anyhow::Result<CompetitionsWebList> {
             .to_string()
             .parse()?;
 
-        let date_text = i.select(&date_selector).next().unwrap().inner_html();
-        let date_captures = date_re.captures_iter(&date_text).next().unwrap();
-        let date = {
-            let day = date_captures[1].parse()?;
-            let month = match &date_captures[2] {
-                "JAN" => 1,
-                "FEB" => 2,
-                "MAR" => 3,
-                "APR" => 4,
-                "MAY" => 5,
-                "JUN" => 6,
-                "JUL" => 7,
-                "AUG" => 8,
-                "SEP" => 9,
-                "OCT" => 10,
-                "NOV" => 11,
-                "DEC" => 12,
-                _ => anyhow::bail!("Invalid month: {}", &date_captures[2]),
-            };
-            let year = date_captures[3].parse()?;
-            NaiveDate::from_ymd_opt(year, month, day).unwrap()
+        let date = match i.select(&date_selector).next() {
+            Some(element) => {
+                let date_text = element.inner_html();
+                let date_captures = date_re.captures_iter(&date_text).next().unwrap();
+
+                let day = date_captures[1].parse()?;
+                let month = match &date_captures[2] {
+                    "JAN" => 1,
+                    "FEB" => 2,
+                    "MAR" => 3,
+                    "APR" => 4,
+                    "MAY" => 5,
+                    "JUN" => 6,
+                    "JUL" => 7,
+                    "AUG" => 8,
+                    "SEP" => 9,
+                    "OCT" => 10,
+                    "NOV" => 11,
+                    "DEC" => 12,
+                    _ => anyhow::bail!("Invalid month: {}", &date_captures[2]),
+                };
+                let year = date_captures[3].parse()?;
+                NaiveDate::from_ymd_opt(year, month, day).unwrap()
+            }
+            // Assume that it's today as there is no date
+            None => chrono::offset::Local::now().date_naive(),
         };
 
         let name_node = i.select(&name_selector).next().unwrap();

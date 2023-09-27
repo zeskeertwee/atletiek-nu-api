@@ -10,13 +10,13 @@ fn main() {
 
     atletiek_nu_api::set_request_callback(req_tx, sta_tx);
 
-    let a = search_competitions_for_time_period(
-        NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2023, 12, 1).unwrap(),
-        "scopias",
-    )
-    .unwrap();
-    dbg!(a);
+    //let a = search_competitions_for_time_period(
+    //    NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+    //    NaiveDate::from_ymd_opt(2023, 12, 1).unwrap(),
+    //    "scopias",
+    //)
+    //.unwrap();
+    //dbg!(a);
 
     //let a = get_athlete_event_result(1612624).unwrap();
     //dbg!(a);

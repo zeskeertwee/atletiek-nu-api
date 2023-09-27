@@ -6,3 +6,6 @@ members = [
 	"gui",
 	"api"
 ]
+exclude = [
+	"api-cfworker"
+]
