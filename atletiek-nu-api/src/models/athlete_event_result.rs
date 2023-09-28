@@ -45,10 +45,12 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
 
     let mut results = Vec::new();
 
-    let table = html
+    let table = match html
         .select(&selector)
-        .next()
-        .expect("No results found (yet?)");
+        .next() {
+        Some(v) => v,
+        None => anyhow::bail!("No results found! (yet?)")
+    };
 
     for row in table.select(&row_selector) {
         let mut fields = row.select(&row_element_selector);

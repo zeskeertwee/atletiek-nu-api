@@ -9,6 +9,7 @@ edition = "2021"
 rocket = { version = "0.5.0-rc.3", features = ["json"] }
 dashmap = "5.4.0"
 log = "0.4.19"
+serde = { version = "1.0.164", features = ["derive"] }
 
 [dependencies.atletiek_nu_api]
 path = "../atletiek-nu-api"
