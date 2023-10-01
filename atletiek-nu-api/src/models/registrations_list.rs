@@ -1,3 +1,4 @@
+use log::trace;
 use crate::util::clean_html;
 use regex::Regex;
 use scraper::{Html, Selector};
@@ -19,6 +20,7 @@ pub struct RegistrationsListElement {
     pub club_name: String,
     pub team_name: Option<String>,
     pub events: Vec<String>,
+    pub out_of_competition: bool
 }
 
 pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
@@ -52,9 +54,13 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
             .map(|v| v.trim())
             .filter(|v| !v.is_empty())
             .collect();
+        dbg!(&info_texts);
 
         let name = info_texts[0].trim().replace("  ", " ");
-        let cat_and_club = info_texts[1];
+        let ooc = info_texts[1] == "(OoC)";
+
+        // 1 if not OoC and 2 if OoC
+        let cat_and_club = info_texts[ooc as usize + 1];
 
         let (category, club_name, mut team_name) =
             match re_cat_club_and_team.captures_iter(&cat_and_club).next() {
@@ -77,8 +83,8 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
                 }
             };
 
-        if info_texts.len() == 3 {
-            team_name = Some(info_texts[2].to_string());
+        if info_texts.len() == 3 + ooc as usize {
+            team_name = Some(info_texts[2 + ooc as usize].to_string());
         }
 
         let events: Vec<String> = event_element
@@ -95,6 +101,7 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
             club_name,
             team_name,
             events,
+            out_of_competition: ooc
         })
     }
 
