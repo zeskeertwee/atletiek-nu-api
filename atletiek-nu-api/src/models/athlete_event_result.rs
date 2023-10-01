@@ -86,11 +86,20 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         for (idx, i) in fields {
             if (idx + 1 == len && !is_combined_event) || (idx + 2 == len && is_combined_event) {
                 // the last one is position, if this isn't a combined-event, otherwise the single-last one is position
+                let position = match i.text().next() {
+                    Some(v) => v.parse().unwrap(),
+                    None => {
+                        // we don't have a position, maybe DNS/DNF?
+                        warn!("No position for event {}", event_name);
+                        continue;
+                    }
+                };
+
                 results.push(EventResult {
                     event_name: event_name.clone(),
                     event_url: href.to_string(),
                     items: vec![EventResultItem::Position {
-                        position: i.text().next().unwrap().parse().unwrap(),
+                        position,
                     }],
                 });
 
@@ -125,8 +134,11 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             let mut data = data_element.value().attr("data").unwrap().parse()?;
             if data < 0.0 {
                 // invalid
-                warn!("Data is less than 0: {:.2}", data);
-                data = f64::NAN;
+                warn!("Data is less than 0: {:.2} for event {}", data, event_name);
+                continue;
+            } else if data > 10000.0 {
+                warn!("Data is more than 10000, assuming DNF/DNS: {:.2} for event {}", data, event_name);
+                continue;
             }
             //dbg!(data);
 
