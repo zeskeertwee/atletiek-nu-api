@@ -420,6 +420,7 @@ dependencies = [
  "chrono",
  "criterion",
  "lazy_static",
+ "log",
  "regex",
  "reqwest",
  "scraper",

@@ -3,9 +3,10 @@ use anyhow::bail;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
+use log::{trace, warn};
 
 const REGEX_EVENT: &'static str =
-    r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d]{0,})/"#;
+    r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
 // Group 1: pos or neg sign, group 2: wind speed
 const REGEX_WIND: &'static str = r#"([+-])([\d]{1,}.[\d]{1,})m/s"#;
 
@@ -68,6 +69,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             match event_td.select(&a_selector).next() {
                 Some(v) => v,
                 None => {
+                    trace!("is combined-event, using second column for event_td");
                     is_combined_event = true;
                     event_td = fields.next().unwrap();
                     event_td.select(&a_selector).next().unwrap()
@@ -123,6 +125,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             let mut data = data_element.value().attr("data").unwrap().parse()?;
             if data < 0.0 {
                 // invalid
+                warn!("Data is less than 0: {:.2}", data);
                 data = f64::NAN;
             }
             //dbg!(data);
