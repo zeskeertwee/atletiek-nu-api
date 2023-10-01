@@ -13,6 +13,10 @@ use rocket::tokio;
 use rocket::{Build, Rocket};
 use std::sync::mpsc::sync_channel;
 use std::time::Duration;
+use leaky_bucket::RateLimiter;
+
+const RATELIMIT_REFIL_AMOUNT: u16 = 1;
+const RATELIMIT_REFIL_INTERVAL: Duration = Duration::from_millis(1000);
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
@@ -49,6 +53,13 @@ async fn main() -> Result<(), rocket::Error> {
         }
     });
 
+    let ratelimiter = RateLimiter::builder()
+        .initial(0)
+        .refill(RATELIMIT_REFIL_AMOUNT as _)
+        .interval(RATELIMIT_REFIL_INTERVAL)
+        .max(2)
+        .build();
+
     rocket::build()
         .mount(
             "/competitions/search",
@@ -60,6 +71,7 @@ async fn main() -> Result<(), rocket::Error> {
         )
         .mount("/competitions/results", routes![get_results::get_results])
         .manage(cache)
+        .manage(ratelimiter)
         .ignite()
         .await?
         .launch()

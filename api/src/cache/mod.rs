@@ -8,6 +8,7 @@ use rocket::{Request, State};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use leaky_bucket::RateLimiter;
 use serde::Serialize;
 
 const HOUR_IN_S: u64 = 60 * 60;
@@ -31,6 +32,7 @@ pub enum CachedRequest {
 struct NotFoundError {
     error: String,
 }
+
 
 impl CachedRequest {
     pub fn new_search_competitions(
@@ -68,11 +70,13 @@ impl CachedRequest {
         }
     }
 
-    pub async fn run(self, cache: RequestCache) -> ApiResponse {
+    pub async fn run(self, cache: RequestCache, ratelimiter: &State<RateLimiter>) -> ApiResponse {
         if let Some((age, v)) = cache.lookup(&self) {
             log::info!("Found in cache");
             return ApiResponse::new_ok_from_string(v).cached(age);
         }
+
+        ratelimiter.acquire_one().await;
 
         match match &self {
             Self::SearchCompetitions { start, end, query } => {
