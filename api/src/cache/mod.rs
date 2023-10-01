@@ -8,6 +8,7 @@ use rocket::{Request, State};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use serde::Serialize;
 
 const HOUR_IN_S: u64 = 60 * 60;
 
@@ -24,6 +25,11 @@ pub enum CachedRequest {
     GetCompetitionResults {
         id: u32,
     },
+}
+
+#[derive(Serialize)]
+struct NotFoundError {
+    error: String,
 }
 
 impl CachedRequest {
@@ -83,9 +89,13 @@ impl CachedRequest {
                     .await
                     .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
-            Self::GetCompetitionResults { id } => atletiek_nu_api::get_athlete_event_result(*id)
-                .await
-                .map(|v| rocket::serde::json::to_string(&v).unwrap()),
+            Self::GetCompetitionResults { id } => match atletiek_nu_api::get_athlete_event_result(*id)
+                .await {
+                Ok(v) => Ok(rocket::serde::json::to_string(&v).unwrap()),
+                Err(e) => return ApiResponse::new_not_found(rocket::serde::json::to_string(&NotFoundError {
+                    error: e.to_string()
+                }).unwrap()),
+            }
         } {
             Ok(v) => {
                 cache.insert(self, v.clone());

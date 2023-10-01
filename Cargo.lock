@@ -204,6 +204,7 @@ dependencies = [
  "dashmap",
  "log",
  "rocket",
+ "serde",
 ]
 
 [[package]]

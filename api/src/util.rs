@@ -7,6 +7,7 @@ use rocket::serde::Serialize;
 use rocket::{Request, Response};
 use std::ops::Deref;
 use std::time::Instant;
+use rocket::futures::future::err;
 
 pub struct RequestNaiveDate(pub NaiveDate);
 
@@ -44,6 +45,7 @@ pub enum ApiResponse {
         headers: Vec<(String, String)>,
     },
     InternalError(String),
+    NotFound(String)
 }
 
 impl ApiResponse {
@@ -82,6 +84,13 @@ impl ApiResponse {
         Self::InternalError(error.to_string())
     }
 
+    pub fn new_not_found<T>(error: T) -> Self
+    where
+        T: ToString,
+    {
+        Self::NotFound(error.to_string())
+    }
+
     pub fn nocache(mut self) -> Self {
         self.add_header("X-Cached", "false")
     }
@@ -97,6 +106,7 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
         let (body, code) = match &self {
             Self::Ok { body, .. } => (body, Status::Ok),
             Self::InternalError(body) => (body, Status::InternalServerError),
+            Self::NotFound(body) => (body, Status::NotFound),
         };
 
         let mut resp = Response::build_from(body.to_owned().respond_to(request)?);
