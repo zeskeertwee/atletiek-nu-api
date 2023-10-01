@@ -54,7 +54,6 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
             .map(|v| v.trim())
             .filter(|v| !v.is_empty())
             .collect();
-        dbg!(&info_texts);
 
         let name = info_texts[0].trim().replace("  ", " ");
         let ooc = info_texts[1] == "(OoC)";
