@@ -54,8 +54,20 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         let mut fields = row.select(&row_element_selector);
         //dbg!(row.html());
 
-        let event_td = fields.next().unwrap();
-        let event = event_td.select(&a_selector).next().unwrap();
+        // sometimes there is an extra column for "is combined-event"
+        // so, if we cannot find the <a>, try the next one
+        // example: https://www.atletiek.nu/atleet/main/1785082/
+        let event = {
+            let mut event_td = fields.next().unwrap();
+            match event_td.select(&a_selector).next() {
+                Some(v) => v,
+                None => {
+                    event_td = fields.next().unwrap();
+                    event_td.select(&a_selector).next().unwrap()
+                }
+            }
+        };
+
         let href = event.value().attr("href").unwrap();
         let event_name = re_event.captures_iter(href).next().unwrap()[1].to_string();
         //dbg!(&event_name);
