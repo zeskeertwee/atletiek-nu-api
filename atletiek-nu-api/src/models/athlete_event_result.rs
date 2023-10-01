@@ -30,6 +30,9 @@ pub enum EventResultItem {
         wind_speed: Option<f64>,
         result: f64,
     },
+    Points {
+        amount: u16,
+    }
 }
 
 /// Expects the DESKTOP site
@@ -56,6 +59,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         let mut fields = row.select(&row_element_selector);
         //dbg!(row.html());
 
+        let mut is_combined_event = false;
         // sometimes there is an extra column for "is combined-event"
         // so, if we cannot find the <a>, try the next one
         // example: https://www.atletiek.nu/atleet/main/1785082/
@@ -64,6 +68,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             match event_td.select(&a_selector).next() {
                 Some(v) => v,
                 None => {
+                    is_combined_event = true;
                     event_td = fields.next().unwrap();
                     event_td.select(&a_selector).next().unwrap()
                 }
@@ -77,8 +82,8 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         let fields: Vec<(usize, scraper::ElementRef)> = fields.enumerate().collect();
         let len = fields.len();
         for (idx, i) in fields {
-            if idx + 1 == len {
-                // position
+            if (idx + 1 == len && !is_combined_event) || (idx + 2 == len && is_combined_event) {
+                // the last one is position, if this isn't a combined-event, otherwise the single-last one is position
                 results.push(EventResult {
                     event_name: event_name.clone(),
                     event_url: href.to_string(),
@@ -88,6 +93,17 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 });
 
                 continue;
+            }
+
+            // if combined-event AND the last one, this is points
+            if (idx + 1 == len && is_combined_event) {
+                results.push(EventResult {
+                    event_name: event_name.clone(),
+                    event_url: href.to_string(),
+                    items: vec![EventResultItem::Points {
+                        amount: i.text().next().unwrap().parse().unwrap()
+                    }],
+                });
             }
 
             let data_element = match i.select(&data_span_selector).next() {
