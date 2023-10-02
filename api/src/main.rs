@@ -14,12 +14,34 @@ use rocket::{Build, Rocket};
 use std::sync::mpsc::sync_channel;
 use std::time::Duration;
 use leaky_bucket::RateLimiter;
+use self_update::cargo_crate_version;
 
 const RATELIMIT_REFIL_AMOUNT: u16 = 1;
 const RATELIMIT_REFIL_INTERVAL: Duration = Duration::from_millis(1000);
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
+    println!("Checking for updates...");
+    let status = rocket::tokio::task::spawn_blocking(|| self_update::backends::github::Update::configure()
+        .repo_owner("zeskeertwee")
+        .repo_name("atletiek-nu-api")
+        .bin_name("api")
+        .show_download_progress(true)
+        .current_version(cargo_crate_version!())
+        .build().unwrap()
+        .update().unwrap()).await.unwrap();
+
+
+    if status.updated() {
+        println!("Binary was updated to a new version: {}, please re-start the application", status.version());
+        println!("Press enter to exit the application");
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        std::process::exit(0);
+    } else {
+        println!("No update is available.")
+    }
+
     tokio::spawn(async {
         let (req_tx, req_rx) = sync_channel::<(usize, atletiek_nu_api::Request)>(1000);
         let (sta_tx, sta_rx) = sync_channel::<(usize, atletiek_nu_api::StatusCode)>(1000);
