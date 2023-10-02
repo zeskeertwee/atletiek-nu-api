@@ -11,12 +11,15 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
+      - name: get git rev
+        shell: bash
+        run: echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: taiki-e/create-gh-release-action@v1
         with:
           # (required) GitHub token for creating GitHub Releases.
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: ${{ git rev-parse --short HEAD }}
+          title: ${{ env.sha_short }}
 
   build:
     strategy:
