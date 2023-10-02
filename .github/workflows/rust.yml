@@ -1,0 +1,35 @@
+name: build-api-binary
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # linux x86
+          - target: x86_64-unknown-linux-gnu
+            os: 'ubuntu-latest'
+            binary: 'target/release/api'
+            
+          # windows x86
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            binary: 'target/release/api.exe'
+            
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --release --bin api --target ${{ matrix.target }}
+    - name: Upload binary artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-without-markdown
+        path: ${{ matrix.binary }}
