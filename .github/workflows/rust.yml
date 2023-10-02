@@ -1,0 +1,46 @@
+name: build-api-binary
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          # (required) GitHub token for creating GitHub Releases.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    strategy:
+      matrix:
+        include:
+          # linux x86
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            
+          # windows x86
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.
+          # Note that glob pattern is not supported yet.
+          bin: api
+          # (required) GitHub token for uploading assets to GitHub Releases.
+          token: ${{ secrets.GITHUB_TOKEN }}
