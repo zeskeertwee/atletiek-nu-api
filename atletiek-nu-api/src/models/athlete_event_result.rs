@@ -22,7 +22,7 @@ pub struct EventResult {
     pub items: Vec<EventResultItem>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EventResultItem {
     Position {
         position: u16,
