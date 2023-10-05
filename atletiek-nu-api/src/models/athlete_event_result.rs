@@ -36,6 +36,31 @@ pub enum EventResultItem {
     }
 }
 
+impl AthleteEventResults {
+    pub fn get_total_points(&self) -> Option<u16> {
+        let mut points = 0;
+        let mut no_points = true;
+
+        for i in self.results.iter() {
+            for item in i.items.iter() {
+                match item {
+                    EventResultItem::Points { amount } => {
+                        no_points = false;
+                        points += amount;
+                    },
+                    _ => (),
+                }
+            }
+        }
+
+        if no_points {
+            None
+        } else {
+            Some(points)
+        }
+    }
+}
+
 /// Expects the DESKTOP site
 pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let selector = Selector::parse("#uitslagentabel > tbody").unwrap();

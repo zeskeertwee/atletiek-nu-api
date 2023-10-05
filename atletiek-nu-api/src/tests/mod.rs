@@ -29,6 +29,7 @@ async fn test_get_results_combined_event_with_dnf_1793090() {
         .await
         .unwrap();
 
+    assert_eq!(results.get_total_points(), Some(1436));
     assert_eq!(results.results.len(), 5);
 
     for i in results.results {
