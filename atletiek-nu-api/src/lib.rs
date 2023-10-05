@@ -17,6 +17,9 @@ use crate::traits::CompetitionID;
 pub use chrono;
 pub use scraper;
 
+#[cfg(test)]
+mod tests;
+
 pub mod models;
 mod traits;
 mod util;

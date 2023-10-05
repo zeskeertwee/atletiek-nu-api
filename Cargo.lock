@@ -427,6 +427,7 @@ dependencies = [
  "reqwest",
  "scraper",
  "serde",
+ "tokio",
  "urlencoding",
 ]
 
