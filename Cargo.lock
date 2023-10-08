@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "atletiek_nu_api"
-version = "0.2.0"
+version = "0.2.0-a"
 dependencies = [
  "anyhow",
  "arc-swap",
