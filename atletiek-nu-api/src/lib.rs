@@ -39,7 +39,7 @@ pub fn set_request_callback(
     STATUS_SENDER.store(Some(Arc::new(status_sender)));
 }
 
-pub async fn send_request(url: &str) -> anyhow::Result<String> {
+pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
     let client = ClientBuilder::new()
         .danger_accept_invalid_certs(true)
         .build()?;
