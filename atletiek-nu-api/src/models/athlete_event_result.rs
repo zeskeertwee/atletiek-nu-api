@@ -132,7 +132,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             }
 
             // if combined-event AND the last one, this is points
-            if (idx + 1 == len && is_combined_event) {
+            if idx + 1 == len && is_combined_event {
                 results.push(EventResult {
                     event_name: event_name.clone(),
                     event_url: href.to_string(),
@@ -156,7 +156,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 Some(v) => v,
             };
 
-            let mut data = data_element.value().attr("data").unwrap().parse()?;
+            let data = data_element.value().attr("data").unwrap().parse()?;
             if data < 0.0 {
                 // invalid
                 warn!("Data is less than 0: {:.2} for event {}", data, event_name);

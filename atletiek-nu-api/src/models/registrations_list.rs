@@ -1,5 +1,3 @@
-use log::trace;
-use crate::util::clean_html;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};

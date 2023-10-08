@@ -3,6 +3,7 @@ use regex::Regex;
 const REGEX_CLEAN_HTML: &'static str = "<(.|\n)*?>";
 
 /// Removes everything except the plaintext from the html
+#[allow(dead_code)]
 pub fn clean_html_re(html: &str) -> String {
     let re = Regex::new(REGEX_CLEAN_HTML).unwrap();
     re.replace(html, "").to_string()
