@@ -15,12 +15,20 @@ use std::sync::mpsc::sync_channel;
 use std::time::Duration;
 use leaky_bucket::RateLimiter;
 use self_update::cargo_crate_version;
+use rpr;
 
 const RATELIMIT_REFIL_AMOUNT: u16 = 1;
 const RATELIMIT_REFIL_INTERVAL: Duration = Duration::from_millis(1000);
+const RPR_SHARED_KEY: Option<&'static str> = option_env!("RPR_SHARED_KEY");
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
+    if let Some(key) = RPR_SHARED_KEY {
+        rpr::initialize([41, 54, 52, 41, 50, 49], &key);
+    } else {
+        println!("Missing shared key during compilation, crash reporting disabled.");
+    }
+
     println!("Checking for updates...");
     let status = rocket::tokio::task::spawn_blocking(|| self_update::backends::github::Update::configure()
         .repo_owner("zeskeertwee")

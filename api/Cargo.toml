@@ -1,6 +1,6 @@
 [package]
 name = "api"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -15,3 +15,7 @@ self_update = { version = "0.38.0", features = ["archive-tar", "archive-zip", "c
 
 [dependencies.atletiek_nu_api]
 path = "../atletiek-nu-api"
+
+[dependencies.rpr]
+git = "https://github.com/zeskeertwee/rpr"
+hash = "5a911599a52518f9065c158d808905b288b0b861"
