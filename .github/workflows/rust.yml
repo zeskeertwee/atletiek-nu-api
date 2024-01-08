@@ -29,9 +29,9 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
 
-           # Raspberry pi
-           - target: armv7-unknown-linux-gnueabihf
-             os: ubuntu-latest
+          # Raspberry pi
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
             
           # windows x86
           - target: x86_64-pc-windows-gnu
