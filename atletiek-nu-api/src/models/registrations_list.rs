@@ -43,9 +43,9 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsList> {
         let info_element = i.select(&info_selector).next().unwrap();
         let event_element = i.select(&event_selector).next().unwrap();
 
-        let href = i.value().attr("href").unwrap();
+        let onclick = i.value().attr("onclick").unwrap();
         let participant_id: u32 =
-            re_participant_id.captures_iter(href).next().unwrap()[1].parse()?;
+            re_participant_id.captures_iter(onclick).next().unwrap()[1].parse()?;
 
         let info_texts: Vec<&str> = info_element
             .text()
