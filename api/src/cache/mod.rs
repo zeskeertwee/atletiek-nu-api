@@ -1,3 +1,7 @@
+mod serialize_instant;
+
+use std::fs::File;
+use std::io::{Read, Write};
 use crate::util::ApiResponse;
 use atletiek_nu_api::chrono::NaiveDate;
 use dashmap::DashMap;
@@ -6,14 +10,16 @@ use rocket::http::ext::IntoCollection;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{Request, State};
 use std::ops::Deref;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use leaky_bucket::RateLimiter;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+use anyhow::Result;
 
 const HOUR_IN_S: u64 = 60 * 60;
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum CachedRequest {
     SearchCompetitions {
         start: NaiveDate,
@@ -111,8 +117,16 @@ impl CachedRequest {
 }
 
 // TODO: persistent cache on disk?
+#[derive(Serialize, Deserialize)]
 pub struct Cache {
-    cached: Arc<DashMap<CachedRequest, (Instant, String)>>,
+    cached: Arc<DashMap<CachedRequest, CacheEntry>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CacheEntry {
+    #[serde(with = "serialize_instant")]
+    pub timestamp: Instant,
+    pub value: String,
 }
 
 impl Clone for Cache {
@@ -156,6 +170,35 @@ impl Cache {
     pub fn insert(&self, query: CachedRequest, value: String) {
         trace!("Inserted new entry into cache");
         self.cached.insert(query, (Instant::now(), value));
+    }
+
+    fn get_path_on_disk() -> Result<PathBuf> {
+        let mut path = std::env::current_exe()?;
+        path.pop();
+        path.push("cache.json");
+
+        Ok(path)
+    }
+
+    pub fn save_to_disk(&self) -> Result<()> {
+        let path = Self::get_path_on_disk()?;
+        log::info!("Saving cache to {}", path.to_string_lossy());
+        let mut file = File::create(path)?;
+        file.write_all(rocket::serde::json::to_string(&self)?.as_bytes())?;
+
+        Ok(())
+    }
+
+    pub fn load_from_disk() -> Result<Self> {
+        let path = Self::get_path_on_disk()?;
+        log::info!("Loading cache from {}", path.to_string_lossy());
+
+        let mut file = File::open(path)?;
+        let mut buf = String::new();
+        file.read_to_string(&mut buf)?;
+
+        let s = rocket::serde::json::from_str(&buf)?;
+        Ok(s)
     }
 }
 

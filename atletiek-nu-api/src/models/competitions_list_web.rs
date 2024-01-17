@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use log::warn;
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -67,7 +68,10 @@ pub fn parse(html: Html) -> anyhow::Result<CompetitionsWebList> {
                 NaiveDate::from_ymd_opt(year, month, day).unwrap()
             }
             // Assume that it's today as there is no date
-            None => chrono::offset::Local::now().date_naive(),
+            None => {
+                warn!("No date found, assuming today");
+                chrono::offset::Local::now().date_naive()
+            },
         };
 
         let name_node = i.select(&name_selector).next().unwrap();
@@ -97,6 +101,7 @@ pub fn parse(html: Html) -> anyhow::Result<CompetitionsWebList> {
                     false
                 }
             } else {
+                warn!("Status selector none, assuming no results");
                 false
             }
         };

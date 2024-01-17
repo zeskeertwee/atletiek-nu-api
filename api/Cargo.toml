@@ -7,11 +7,12 @@ edition = "2021"
 
 [dependencies]
 rocket = { version = "0.5.0-rc.3", features = ["json"] }
-dashmap = "5.4.0"
+dashmap = { version = "5.4.0", features = ["serde"] }
 log = "0.4.19"
-serde = { version = "1.0.164", features = ["derive"] }
+serde = { version = "1.0.164", features = ["derive", "rc"] }
 leaky-bucket = "1.0.1"
 self_update = { version = "0.38.0", features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "compression-zip-bzip2"] }
+anyhow = "1.0.79"
 
 [dependencies.atletiek_nu_api]
 path = "../atletiek-nu-api"
