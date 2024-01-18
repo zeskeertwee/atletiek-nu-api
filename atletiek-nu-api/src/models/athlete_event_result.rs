@@ -30,9 +30,21 @@ pub enum EventResultItem {
     Measurement {
         wind_speed: Option<f64>,
         result: f64,
+        dnf: bool,
+        // the reason that it was assumed to be DNF/DNS
+        #[serde(skip_serializing_if = "Option::is_none")]
+        dnf_reason: Option<DnfReason>,
     },
     Points {
         amount: u16,
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum DnfReason {
+    DataBelowZero,
+    DataAboveThreshold {
+        threshold: f64
     }
 }
 
@@ -157,13 +169,16 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             };
 
             let data = data_element.value().attr("data").unwrap().parse()?;
+            let mut dnf = None;
             if data < 0.0 {
                 // invalid
-                warn!("Data is less than 0: {:.2} for event {}", data, event_name);
-                continue;
+                warn!("Data is less than 0: {:.2} for event {}, assuming DNF/DNS", data, event_name);
+                dnf = Some(DnfReason::DataBelowZero);
             } else if data > 10000.0 {
                 warn!("Data is more than 10000, assuming DNF/DNS: {:.2} for event {}", data, event_name);
-                continue;
+                dnf = Some(DnfReason::DataAboveThreshold {
+                    threshold: 10000.0
+                });
             }
             //dbg!(data);
 
@@ -187,6 +202,8 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 items: vec![EventResultItem::Measurement {
                     result: data,
                     wind_speed,
+                    dnf: dnf.is_some(),
+                    dnf_reason: dnf
                 }],
             })
         }

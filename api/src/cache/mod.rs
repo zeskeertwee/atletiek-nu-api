@@ -19,7 +19,6 @@ use std::time::{Duration, Instant};
 use leaky_bucket::RateLimiter;
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
-use serde_with::serde_as;
 
 const HOUR_IN_S: u64 = 60 * 60;
 
@@ -152,6 +151,8 @@ impl Cache {
     }
 
     pub fn clean(&self) {
+        let mut to_remove = Vec::new();
+
         for i in self.cached.iter() {
             let valid_for = i.key().cache_duration();
             let valid = i.value().timestamp.elapsed() < valid_for;
@@ -162,8 +163,12 @@ impl Cache {
                     i.value().timestamp.elapsed().as_secs(),
                     valid_for.as_secs()
                 );
-                self.cached.remove(i.key());
+                to_remove.push(i.key().to_owned());
             }
+        }
+
+        for i in to_remove {
+            self.cached.remove(&i);
         }
     }
 

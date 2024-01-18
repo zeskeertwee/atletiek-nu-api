@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use tokio;
 use crate::{
     get_competition_registrations,
     get_athlete_event_result
 };
-use crate::models::athlete_event_result::EventResultItem;
+use crate::models::athlete_event_result::{DnfReason, EventResultItem};
 
 #[tokio::test]
 async fn test_get_participant_list_39657() {
@@ -36,7 +37,41 @@ async fn test_get_results_combined_event_with_dnf_1793090() {
         if i.event_name == "800m" {
             // check if DNF case is being handled well
             assert!(i.items.contains(&EventResultItem::Points { amount: 0 }));
-            assert_eq!(i.items.len(), 1);
+            assert_eq!(i.items.len(), 2);
+            assert!(i.items.contains(&EventResultItem::Measurement {
+                wind_speed: None,
+                result: 9999998.0,
+                dnf: true,
+                dnf_reason: Some(DnfReason::DataAboveThreshold {
+                    threshold: 10000.0
+                })
+            }));
         }
+    }
+}
+
+#[tokio::test]
+async fn test_get_results_dnf_1734217() {
+    let results = get_athlete_event_result(1734217)
+        .await
+        .unwrap();
+
+    assert_eq!(results.results.len(), 3); // LJ, SP, DT
+    let mut expected_dnf_counts: HashMap<String, usize> = HashMap::new();
+    expected_dnf_counts.insert("Ver".to_string(), 2);
+    expected_dnf_counts.insert("Kogel".to_string(), 0);
+    expected_dnf_counts.insert("Discus".to_string(), 4);
+
+    for result in results.results {
+        let dnf_count = result.items.iter().filter(|v| match v {
+            EventResultItem::Measurement { dnf, dnf_reason, .. } => if *dnf {
+                assert_eq!(*dnf_reason.as_ref().unwrap(), DnfReason::DataBelowZero); // in this case, they are all -2
+                true
+            } else { false },
+            _ => false,
+        }).count();
+
+        let expected_count = expected_dnf_counts.get(&result.event_name).unwrap();
+        assert_eq!(dnf_count, *expected_count);
     }
 }
