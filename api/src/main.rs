@@ -8,7 +8,7 @@ mod util;
 extern crate rocket;
 
 use crate::cache::Cache;
-use log::trace;
+use log::{trace, info};
 use rocket::tokio;
 use rocket::{Build, Rocket};
 use std::sync::mpsc::sync_channel;
@@ -69,7 +69,19 @@ async fn main() -> Result<(), rocket::Error> {
         }
     });
 
-    let cache = Cache::new();
+    let cache = match Cache::load_from_disk() {
+        Ok(c) => {
+            println!("Cache loaded from disk OK, cleaning");
+            c.clean();
+            println!("Finished cleaning cache");
+            c
+        },
+        Err(e) => {
+            println!("Failed to load cache from disk: {}", e);
+            println!("Creating empty cache");
+            Cache::new()
+        }
+    };
 
     let cache_copy = cache.clone();
     tokio::spawn(async {
@@ -90,6 +102,7 @@ async fn main() -> Result<(), rocket::Error> {
         .max(2)
         .build();
 
+    let cache_managed = cache.clone();
     rocket::build()
         .mount(
             "/competitions/search",
@@ -100,12 +113,17 @@ async fn main() -> Result<(), rocket::Error> {
             routes![get_registrations::get_registrations],
         )
         .mount("/competitions/results", routes![get_results::get_results])
-        .manage(cache)
+        .manage(cache_managed)
         .manage(ratelimiter)
         .ignite()
         .await?
         .launch()
         .await?;
+
+    match cache.save_to_disk() {
+        Ok(()) => println!("Cache saved to disk OK"),
+        Err(e) => println!("Cache failed to save to disk: {}", e),
+    }
 
     Ok(())
 }

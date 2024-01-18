@@ -1,6 +1,6 @@
 [package]
 name = "api"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,6 +13,7 @@ serde = { version = "1.0.164", features = ["derive", "rc"] }
 leaky-bucket = "1.0.1"
 self_update = { version = "0.38.0", features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "compression-zip-bzip2"] }
 anyhow = "1.0.79"
+serde_with = "3.4.0"
 
 [dependencies.atletiek_nu_api]
 path = "../atletiek-nu-api"
