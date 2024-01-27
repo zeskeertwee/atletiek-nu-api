@@ -1,1 +1,3 @@
 /target/
+/api-cfworker/node_modules/
+/api-cfworker/target/
