@@ -41,7 +41,7 @@ pub fn set_request_callback(
 
 pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
     let client = ClientBuilder::new()
-        .danger_accept_invalid_certs(true)
+        //.danger_accept_invalid_certs(true)
         .build()?;
     let req = client
         .get(url)
