@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use tokio;
+use regex::Regex;
 use crate::{
     get_competition_registrations,
     get_athlete_event_result
@@ -73,5 +74,20 @@ async fn test_get_results_dnf_1734217() {
 
         let expected_count = expected_dnf_counts.get(&result.event_name).unwrap();
         assert_eq!(dnf_count, *expected_count);
+    }
+}
+
+#[tokio::test]
+async fn test_multiple_event_registrations_40258() {
+    let registrations = get_competition_registrations(&40258).await.unwrap();
+
+    let re = Regex::new("\\+[0-9] onderdelen").unwrap();
+
+    for i in registrations {
+        for event in i.events {
+            if re.is_match(&event) {
+                panic!("Test failed on participant {}, event '{}'", i.participant_id, event);
+            }
+        }
     }
 }

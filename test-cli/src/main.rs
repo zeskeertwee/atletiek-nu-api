@@ -3,8 +3,11 @@ use atletiek_nu_api::{
     search_athletes, search_competitions_for_time_period,
 };
 use std::sync::mpsc::{sync_channel, Receiver};
+use tokio;
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    pretty_env_logger::init();
     let (req_tx, req_rx) = sync_channel::<(usize, atletiek_nu_api::Request)>(1000);
     let (sta_tx, sta_rx) = sync_channel::<(usize, atletiek_nu_api::StatusCode)>(1000);
 
@@ -24,6 +27,9 @@ fn main() {
     //dbg!(a);
     //let c = search_competitions("scopias").unwrap();
     //dbg!(c);
+
+    let a = atletiek_nu_api::get_competition_registrations_web(&40258).await.unwrap();
+    dbg!(a);
 
     print_channel_updates(req_rx, sta_rx);
 }

@@ -89,6 +89,14 @@ pub async fn get_competition_registrations<C: CompetitionID>(
     models::registrations_list::parse(Html::parse_fragment(&body))
 }
 
+pub async fn get_competition_registrations_web<C: CompetitionID>(
+    competition_id: &C,
+) -> anyhow::Result<RegistrationsList> {
+    let url = format!("https://www.atletiek.nu/wedstrijd/atleten/{}/", competition_id.competition_id());
+    let body = send_request(&url).await?;
+    models::registrations_list_web::parse(Html::parse_document(&body))
+}
+
 // curl 'https://www.atletiek.nu/atleet/main/1398565/' --compressed -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Cookie: atletieknu_Session=av73k220pflv57f599g4r0u5c2; __cmpcc=1; __cmpconsentx66181=CPtS9XAPtS9XAAfC1BENDICgAAAAAAAAAAigAAAS0gHAA4AKcAZ8BHgCVwFYAMEAdiA7YB3IEKQJEASjAloAAA; __cmpcccx66181=aBPtVahoAAAAAAA' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-User: ?1' > grep.html
 
 pub async fn get_athlete_event_result(participant_id: u32) -> anyhow::Result<AthleteEventResults> {
