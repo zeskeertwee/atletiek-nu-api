@@ -3,13 +3,14 @@ use tokio;
 use regex::Regex;
 use crate::{
     get_competition_registrations,
+    get_competition_registrations_web,
     get_athlete_event_result
 };
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
 
 #[tokio::test]
 async fn test_get_participant_list_39657() {
-    let participants = get_competition_registrations(&39657)
+    let participants = get_competition_registrations_web(&39657)
         .await
         .unwrap();
 
@@ -18,7 +19,7 @@ async fn test_get_participant_list_39657() {
 
 #[tokio::test]
 async fn test_get_participant_list_38681() {
-    let participants = get_competition_registrations(&38681)
+    let participants = get_competition_registrations_web(&38681)
         .await
         .unwrap();
 
@@ -79,7 +80,7 @@ async fn test_get_results_dnf_1734217() {
 
 #[tokio::test]
 async fn test_multiple_event_registrations_40258() {
-    let registrations = get_competition_registrations(&40258).await.unwrap();
+    let registrations = get_competition_registrations_web(&40258).await.unwrap();
 
     let re = Regex::new("\\+[0-9] onderdelen").unwrap();
 

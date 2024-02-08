@@ -26,6 +26,7 @@ mod util;
 
 use crate::models::competitions_list_web::CompetitionsWebList;
 pub use reqwest::{Request, StatusCode};
+use crate::models::registrations_list_web::RegistrationsWebList;
 
 static REQUEST_SENDER: ArcSwapOption<SyncSender<(usize, Request)>> = ArcSwapOption::const_empty();
 static STATUS_SENDER: ArcSwapOption<SyncSender<(usize, StatusCode)>> = ArcSwapOption::const_empty();
@@ -91,7 +92,7 @@ pub async fn get_competition_registrations<C: CompetitionID>(
 
 pub async fn get_competition_registrations_web<C: CompetitionID>(
     competition_id: &C,
-) -> anyhow::Result<RegistrationsList> {
+) -> anyhow::Result<RegistrationsWebList> {
     let url = format!("https://www.atletiek.nu/wedstrijd/atleten/{}/", competition_id.competition_id());
     let body = send_request(&url).await?;
     models::registrations_list_web::parse(Html::parse_document(&body))

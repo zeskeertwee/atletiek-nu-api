@@ -30,6 +30,8 @@ async fn main() {
 
     let a = atletiek_nu_api::get_competition_registrations_web(&40258).await.unwrap();
     dbg!(a);
+    //let b = atletiek_nu_api::get_competition_registrations_web(&38774).await.unwrap();
+    //dbg!(b);
 
     print_channel_updates(req_rx, sta_rx);
 }
