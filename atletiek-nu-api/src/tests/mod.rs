@@ -7,10 +7,11 @@ use crate::{
     get_athlete_event_result
 };
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
+use crate::models::registrations_list_web::EventStatus;
 
 #[tokio::test]
 async fn test_get_participant_list_39657() {
-    let participants = get_competition_registrations_web(&39657)
+            let participants = get_competition_registrations_web(&39657)
         .await
         .unwrap();
 
@@ -86,9 +87,35 @@ async fn test_multiple_event_registrations_40258() {
 
     for i in registrations {
         for event in i.events {
-            if re.is_match(&event) {
-                panic!("Test failed on participant {}, event '{}'", i.participant_id, event);
+            if re.is_match(&event.0) {
+                panic!("Test failed on participant {}, event '{:?}'", i.participant_id, event);
             }
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_event_status_38436() {
+    let registratiops = get_competition_registrations_web(&38436).await.unwrap();
+
+    for i in registratiops {
+        for (_, status) in &i.events {
+            // we shouldn't see any other status than these
+            assert!(status == &EventStatus::CheckedIn || status == &EventStatus::Cancelled || status == &EventStatus::Rejected);
+        }
+
+        match i.bib_number {
+            Some(44) => {
+                assert!(i.events.contains(&("400m".to_string(), EventStatus::CheckedIn)));
+                assert!(i.events.contains(&("400m_f".to_string(), EventStatus::CheckedIn)));
+                assert_eq!(i.events.len(), 2);
+            },
+            Some(45) => {
+                assert!(i.events.contains(&("60m".to_string(), EventStatus::Rejected)));
+                assert!(i.events.contains(&("60mH".to_string(), EventStatus::CheckedIn)));
+                assert!(i.events.contains(&("SP".to_string(), EventStatus::CheckedIn)));
+            },
+            _ => (),
         }
     }
 }

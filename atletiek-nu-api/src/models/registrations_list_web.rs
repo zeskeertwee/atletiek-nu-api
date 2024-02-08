@@ -17,9 +17,22 @@ pub struct RegistrationsWebListElement {
     pub short_club_name: String,
     pub club_name: String,
     pub team_name: Option<String>,
-    pub events: Vec<String>,
+    pub events: Vec<(String, EventStatus)>,
     pub out_of_competition: bool,
     pub bib_number: Option<u32>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EventStatus {
+    Accepted,
+    Cancelled,
+    Rejected,
+    Reserve,
+    Unverified,
+    CheckedIn,
+
+    // Used when the scraper can't determine the status (so it's probably not used by the competition)
+    Unknown,
 }
 
 pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
@@ -66,7 +79,13 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
         for (i, element) in row.select(&td_selector).enumerate() {
             match table_headers[i].as_str() {
                 "bib" => {
-                    let text = element.select(&span_selector).next().unwrap().text().next().unwrap();
+                    let text = match element.select(&span_selector).next() {
+                        Some(span) => span.text().next().unwrap(),
+                        None => {
+                            warn!("Bib tr contained no span!");
+                            continue;
+                        },
+                    };
                     trace!("table header bib has value {}", text);
                     match text.parse() {
                         Ok(v) => item.bib_number = Some(v),
@@ -125,15 +144,42 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
                     }
                 },
                 "events" => {
-                    let mut text = element.text();
                     let mut events = Vec::new();
-                    while let Some(t) = text.next() {
-                        let text = t.trim().to_string();
-                        if !text.is_empty() {
-                            events.push(text);
-                        }
+
+                    let mut tipped_spans = element.select(&span_tipped_selector);
+                    while let Some(tipped_span) = tipped_spans.next() {
+                        trace!("Scraping tipped span for events");
+                        // we have tipped spans instead of normal text
+                        let kind = tipped_span.value().attr("title").unwrap().trim().to_lowercase();
+                        let event_status = match kind.as_str() {
+                            "unverified" => EventStatus::Unverified,
+                            "cancelled" => EventStatus::Cancelled,
+                            "accepted" => EventStatus::Accepted,
+                            "rejected" => EventStatus::Rejected,
+                            "reserve" => EventStatus::Reserve,
+                            "checked-in" => EventStatus::CheckedIn,
+                            x => {
+                                error!("Unexpected event status: {}", x);
+                                EventStatus::Unknown
+                            }
+                        };
+                        let event_text = tipped_span.text().next().unwrap().trim();
+                        events.push((event_text.to_string(), event_status));
                     }
-                    trace!("table events has values {:?}", &events);
+
+                    // if the tipped spans didn't work, try without
+                    if events.is_empty() {
+                        trace!("No tipped span for events, using text");
+                        let mut text = element.text();
+                        while let Some(t) = text.next() {
+                            let text = t.trim().to_string();
+                            if !text.is_empty() {
+                                events.push((text, EventStatus::Unknown));
+                            }
+                        }
+                        trace!("table events has values {:?}", &events);
+                    }
+
                     item.events = events;
                 }
                 v => trace!("Unexpected table header '{}'", v)
