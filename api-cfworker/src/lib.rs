@@ -29,6 +29,19 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 Response::error("Missing ID", 400)
             }
         })
+        .get_async("/athletes/search/:query", |_req, ctx| async move {
+            if let Some(query) = ctx.param("query") {
+                match atletiek_nu_api::search_athletes(&query).await {
+                    Ok(r) => Response::from_json(&r),
+                    Err(e) =>  {
+                        console_error!("Error fetching results: {}", e);
+                        Response::error("Internal error", 500)
+                    }
+                }
+            } else {
+                Response::error("Missing query", 400)
+            }
+        })
         .get_async("/v1/competitions/registrations/:id", |_req, ctx| async move {
             if let Some(id) = ctx.param("id") {
                 if let Ok(id) = id.parse::<u32>() {
