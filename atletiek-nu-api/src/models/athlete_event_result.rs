@@ -13,6 +13,7 @@ const REGEX_WIND: &'static str = r#"([+-])([\d]{1,}.[\d]{1,})m/s"#;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
     pub results: Vec<EventResult>,
+    pub participated_in: Vec<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,10 +82,16 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
+    let competition_list_selector = Selector::parse("div#wedstrijden > table#persoonlijkerecords").unwrap();
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
     let re_wind = Regex::new(&REGEX_WIND).unwrap();
 
     let mut results = Vec::new();
+    let mut participated_in = Vec::new();
+
+    let competitions_table = html.select(&competition_list_selector).next().unwrap() {
+
+    }
 
     let table = match html
         .select(&selector)
@@ -235,5 +242,5 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     }
 
 
-    Ok(AthleteEventResults { results: res })
+    Ok(AthleteEventResults { results: res, participated_in })
 }
