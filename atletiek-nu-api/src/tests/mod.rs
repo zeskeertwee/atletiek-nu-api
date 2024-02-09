@@ -119,3 +119,14 @@ async fn test_event_status_38436() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_get_participant_list_38679() {
+    let registrations =  get_competition_registrations_web(&38679).await.unwrap();
+
+    for i in registrations {
+        if i.name.is_empty() {
+            panic!("Empty name for participant id {}!", i.participant_id);
+        }
+    }
+}
