@@ -96,9 +96,9 @@ async fn test_multiple_event_registrations_40258() {
 
 #[tokio::test]
 async fn test_event_status_38436() {
-    let registratiops = get_competition_registrations_web(&38436).await.unwrap();
+    let registrations = get_competition_registrations_web(&38436).await.unwrap();
 
-    for i in registratiops {
+    for i in registrations {
         for (_, status) in &i.events {
             // we shouldn't see any other status than these
             assert!(status == &EventStatus::CheckedIn || status == &EventStatus::Cancelled || status == &EventStatus::Rejected);
