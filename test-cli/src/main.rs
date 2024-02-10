@@ -1,6 +1,6 @@
 use atletiek_nu_api::{
     chrono::NaiveDate, get_competition_registrations, get_competitions_for_time_period, scraper,
-    search_athletes, search_competitions_for_time_period,
+    search_athletes, search_competitions_for_time_period, get_athlete_event_result
 };
 use std::sync::mpsc::{sync_channel, Receiver};
 use tokio;
@@ -21,14 +21,14 @@ async fn main() {
     //.unwrap();
     //dbg!(a);
 
-    //let a = get_athlete_event_result(1612624).unwrap();
+    //let a = get_athlete_event_result(1708289).await.unwrap();
     //dbg!(a);
     //let a = search_athletes("femke bol").unwrap();
     //dbg!(a);
     //let c = search_competitions("scopias").unwrap();
     //dbg!(c);
 
-    let a = atletiek_nu_api::get_competition_registrations_web(&39657).await.unwrap();
+    let a = atletiek_nu_api::get_competition_registrations_web(&38406).await.unwrap();
     dbg!(a);
     //let b = atletiek_nu_api::get_competition_registrations_web(&38774).await.unwrap();
     //dbg!(b);

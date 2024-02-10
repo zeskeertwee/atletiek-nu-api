@@ -130,3 +130,16 @@ async fn test_get_participant_list_38679() {
         }
     }
 }
+
+#[tokio::test]
+async fn test_relay_teams_38406() {
+    let registrations = get_competition_registrations_web(&38406).await.unwrap();
+
+    for i in registrations {
+        match i.bib_number {
+            Some(276) | Some(336) => assert_eq!(i.relay_teams.len(), 1),
+            Some(353) => assert_eq!(i.relay_teams.len(), 4),
+            _ => (),
+        }
+    }
+}

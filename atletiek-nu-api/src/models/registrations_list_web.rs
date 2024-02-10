@@ -6,6 +6,7 @@ use super::registrations_list::{RegistrationsList, RegistrationsListElement};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"deelnemer_id=([0-9]{0,})"#;
 const REGEX_CATEGORY_AND_CLUB: &'static str = r#"([\s\S]{1,}) - ([\s\S]{1,})"#;
+const REGEX_RELAY_PARTICIPANT_ID: &'static str = r#"https://www.atletiek.nu/estafetteteam/main/(\d{1,})/"#;
 
 pub type RegistrationsWebList = Vec<RegistrationsWebListElement>;
 
@@ -17,9 +18,16 @@ pub struct RegistrationsWebListElement {
     pub short_club_name: String,
     pub club_name: String,
     pub team_name: Option<String>,
+    pub relay_teams: Vec<RelayTeam>,
     pub events: Vec<(String, EventStatus)>,
     pub out_of_competition: bool,
     pub bib_number: Option<u32>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RelayTeam {
+    pub participant_id: u32,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -46,6 +54,7 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
     let span_tipped_selector = Selector::parse("span.tipped").unwrap();
     let re_participant = Regex::new(REGEX_PARTICIPANT_ID).unwrap();
     let re_cat_club = Regex::new(REGEX_CATEGORY_AND_CLUB).unwrap();
+    let re_relay_participant = Regex::new(REGEX_RELAY_PARTICIPANT_ID).unwrap();
 
     let table = html.select(&table_selector).next().unwrap();
     let mut table_headers: Vec<String> = Vec::new();
@@ -71,6 +80,7 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
             short_club_name: String::new(),
             club_name: String::new(),
             team_name: None,
+            relay_teams: Vec::new(),
             events: Vec::new(),
             out_of_competition: false,
             bib_number: None,
@@ -181,7 +191,20 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
                     }
 
                     item.events = events;
-                }
+                },
+                "relay team" => {
+                    let mut a = element.select(&a_selector);
+                    while let Some(a) = a.next() {
+                        let href = a.value().attr("href").unwrap();
+                        let id = re_relay_participant.captures_iter(href).next().unwrap()[1].parse().unwrap();
+                        let text = a.text().next().unwrap().trim().to_string();
+
+                        item.relay_teams.push(RelayTeam {
+                            participant_id: id,
+                            name: text,
+                        });
+                    }
+                },
                 v => trace!("Unexpected table header '{}'", v)
             }
         }
