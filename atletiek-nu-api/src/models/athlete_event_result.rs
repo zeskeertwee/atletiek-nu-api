@@ -4,23 +4,17 @@ use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use log::{trace, warn};
+use crate::models::competition_registrations_list::CompetitionRegistrationList;
 
 const REGEX_EVENT: &'static str =
     r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
-const REGEX_PARTICIPANT_ID: &'static str = r#"https://www.atletiek.nu/atleet/main/([\d]{0,})/"#;
 // Group 1: pos or neg sign, group 2: wind speed
 const REGEX_WIND: &'static str = r#"([+-])([\d]{1,}.[\d]{1,})m/s"#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
     pub results: Vec<EventResult>,
-    pub participated_in: Vec<CompetitionRegistration>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CompetitionRegistration {
-    pub participant_id: u32,
-    pub name: String,
+    pub participated_in: CompetitionRegistrationList,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,25 +83,11 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
-    let competition_list_selector = Selector::parse("div#wedstrijden > table#persoonlijkerecords").unwrap();
-    let competition_list_link_selector = Selector::parse("tbody > tr > td > a").unwrap();
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
     let re_wind = Regex::new(&REGEX_WIND).unwrap();
-    let re_participant = Regex::new(&REGEX_PARTICIPANT_ID).unwrap();
 
     let mut results = Vec::new();
-    let mut participated_in = Vec::new();
-
-    if let Some(competitions_table) = html.select(&competition_list_selector).next() {
-        for i in competitions_table.select(&competition_list_link_selector) {
-            let text = i.text().next().unwrap().to_string();
-            let href = i.value().attr("href").unwrap();
-            participated_in.push(CompetitionRegistration {
-                participant_id: re_participant.captures_iter(href).next().unwrap()[1].parse().unwrap(),
-                name: text,
-            });
-        }
-    }
+    let participated_in = super::competition_registrations_list::parse(html.root_element())?;
 
     let table = match html
         .select(&selector)

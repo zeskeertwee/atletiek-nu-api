@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use worker::*;
 use atletiek_nu_api::chrono::{NaiveDate, ParseError};
+use urlencoding;
 
 fn parse_naive_date(s: &str) -> std::result::Result<NaiveDate, ParseError> {
     NaiveDate::parse_from_str(&s, "%Y-%m-%d")
@@ -30,7 +31,15 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
             }
         })
         .get_async("/athletes/search/:query", |_req, ctx| async move {
+            console_log!("Query {:?}", ctx.param("query"));
             if let Some(query) = ctx.param("query") {
+                let query = match urlencoding::decode(query) {
+                    Ok(q) => q,
+                    Err(e) => {
+                        console_error!("Error decoding query: {}", e);
+                        return Response::error("Query decode error", 400)
+                    },
+                };
                 match atletiek_nu_api::search_athletes(&query).await {
                     Ok(r) => Response::from_json(&r),
                     Err(e) =>  {
@@ -40,6 +49,24 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 }
             } else {
                 Response::error("Missing query", 400)
+            }
+        })
+        .get_async("/athletes/profile/:id", |_req, ctx| async move {
+            if let Some(id) = ctx.param("id") {
+                if let Ok(id) = id.parse() {
+                    let result = atletiek_nu_api::get_athlete_profile(id).await;
+                    match result {
+                        Ok(r) => Response::from_json(&r),
+                        Err(e) => {
+                            console_error!("Error fetching results: {}", e);
+                            Response::error("Internal error", 500)
+                        }
+                    }
+                } else {
+                    Response::error("Unable to parse ID", 400)
+                }
+            } else {
+                Response::error("Missing ID", 400)
             }
         })
         .get_async("/v1/competitions/registrations/:id", |_req, ctx| async move {

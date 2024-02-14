@@ -1,11 +1,8 @@
 use std::collections::HashMap;
+use chrono::NaiveDate;
 use tokio;
 use regex::Regex;
-use crate::{
-    get_competition_registrations,
-    get_competition_registrations_web,
-    get_athlete_event_result
-};
+use crate::{get_competition_registrations, get_competition_registrations_web, get_athlete_event_result, get_athlete_profile};
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
 use crate::models::registrations_list_web::EventStatus;
 
@@ -139,6 +136,39 @@ async fn test_relay_teams_38406() {
         match i.bib_number {
             Some(276) | Some(336) => assert_eq!(i.relay_teams.len(), 1),
             Some(353) => assert_eq!(i.relay_teams.len(), 4),
+            _ => (),
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_profile_921275() {
+    let profile = get_athlete_profile(921275).await.unwrap();
+
+    for (k, v) in profile.personal_bests {
+        match k.as_str() {
+            "60 meters" => {
+                assert_eq!(v.performance, 9.62);
+                assert_eq!(v.hand_measured, false);
+                assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
+                assert_eq!(v.country, "NLD");
+                assert_eq!(v.location, "Venlo");
+            },
+            "Shot put" => {
+                assert_eq!(v.performance, 5.98);
+                assert_eq!(v.hand_measured, false);
+                assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
+                assert_eq!(v.country, "NLD");
+                assert_eq!(v.location, "Venlo");
+            },
+            // TODO: fix multiple events with missing wind measurements/etc
+            //"Long jump" => {
+            //    assert_eq!(v.performance, 3.36);
+            //    assert_eq!(v.hand_measured, false);
+            //    assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 25).unwrap());
+            //    assert_eq!(v.country, "NLD");
+            //    assert_eq!(v.location, "Weert");
+            //},
             _ => (),
         }
     }

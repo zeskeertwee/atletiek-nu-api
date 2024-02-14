@@ -26,6 +26,7 @@ mod util;
 
 use crate::models::competitions_list_web::CompetitionsWebList;
 pub use reqwest::{Request, StatusCode};
+use crate::models::athlete_profile::AthleteProfile;
 use crate::models::registrations_list_web::RegistrationsWebList;
 
 static REQUEST_SENDER: ArcSwapOption<SyncSender<(usize, Request)>> = ArcSwapOption::const_empty();
@@ -107,6 +108,12 @@ pub async fn get_athlete_event_result(participant_id: u32) -> anyhow::Result<Ath
     //panic!("done");
     //dbg!(&body);
     models::athlete_event_result::parse(Html::parse_document(&body))
+}
+
+pub async fn get_athlete_profile(athlete_id: u32) -> anyhow::Result<AthleteProfile> {
+    let url = format!("https://www.atletiek.nu/atleet/profiel/{}", athlete_id);
+    let body = send_request(&url).await?;
+    models::athlete_profile::parse(Html::parse_document(&body))
 }
 
 pub async fn get_competitions_for_time_period(
