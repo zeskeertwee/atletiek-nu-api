@@ -1,17 +1,49 @@
 use std::collections::HashMap;
+use std::ops::Add;
+use std::time::Duration;
 use worker::*;
-use atletiek_nu_api::chrono::{NaiveDate, ParseError};
+use atletiek_nu_api::chrono::{NaiveDate, offset, NaiveDateTime, ParseError, DateTime, Utc};
 use urlencoding;
+
+const HOUR_S: u64 = 60 * 60;
 
 fn parse_naive_date(s: &str) -> std::result::Result<NaiveDate, ParseError> {
     NaiveDate::parse_from_str(&s, "%Y-%m-%d")
 }
 
+fn format_http_timestamp(time: DateTime<Utc>) -> String {
+    time.format("%a, %d %b %Y %H:%M:%S %Z").to_string()
+}
+
 #[event(fetch)]
 async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
+    let poke_cache = if let Ok(Some(header)) = req.headers().get("X-poke-cache") {
+        header == "true"
+    } else {
+        false
+    };
+
+    let cache = Cache::default();
+
+    if poke_cache {
+        console_log!("Ignoring cache");
+    } else {
+        match cache.get(&req, false).await {
+            Ok(Some(mut r)) => {
+                console_log!("Response from cache");
+                return Ok(r);
+            },
+            Err(e) => console_error!("Failed to get from cache: {}", e),
+            Ok(None) => (),
+        }
+    }
+
+
     let router = Router::new();
 
-    router
+    let mut cache_validity = Duration::from_secs(HOUR_S);
+
+    let mut response = router
         .get_async("/competitions/results/:id", |_req, ctx| async move {
             if let Some(id) = ctx.param("id") {
                 if let Ok(id) = id.parse() {
@@ -148,6 +180,16 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 Response::error("Internal error", 500)
             }
         })
-        .run(req, env)
-        .await
+        .run(req.clone().unwrap(), env)
+        .await?;
+
+    let mut cache_resp = response.cloned().unwrap();
+    let now = offset::Utc::now();
+    let expires_in = now + cache_validity;
+    let timestamp = format_http_timestamp(expires_in);
+    console_log!("HTTP timestamp {}", timestamp);
+    cache_resp.headers_mut().set("Expires", &timestamp);
+    cache.put(&req, cache_resp).await;
+
+    Ok(response)
 }
