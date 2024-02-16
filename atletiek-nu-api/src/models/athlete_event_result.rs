@@ -8,8 +8,6 @@ use crate::models::competition_registrations_list::CompetitionRegistrationList;
 
 const REGEX_EVENT: &'static str =
     r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
-// Group 1: pos or neg sign, group 2: wind speed
-const REGEX_WIND: &'static str = r#"([+-])([\d]{1,}.[\d]{1,})m/s"#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
@@ -30,8 +28,8 @@ pub enum EventResultItem {
         position: u16,
     },
     Measurement {
-        wind_speed: Option<f64>,
-        result: f64,
+        wind_speed: Option<f32>,
+        result: f32,
         dnf: bool,
         // the reason that it was assumed to be DNF/DNS
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -46,7 +44,7 @@ pub enum EventResultItem {
 pub enum DnfReason {
     DataBelowZero,
     DataAboveThreshold {
-        threshold: f64
+        threshold: f32
     }
 }
 
@@ -84,7 +82,6 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let data_span_selector = Selector::parse("span.sortData").unwrap();
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
-    let re_wind = Regex::new(&REGEX_WIND).unwrap();
 
     let mut results = Vec::new();
     let participated_in = super::competition_registrations_list::parse(html.root_element())?;
@@ -185,17 +182,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             }
             //dbg!(data);
 
-            let wind_speed =
-                if let Some(captures) = re_wind.captures_iter(&visible_element.html()).next() {
-                    let sign = match &captures[1] {
-                        "+" => 1.0,
-                        "-" => -1.0,
-                        other => bail!("Unexpected wind speed sign: {}", other),
-                    };
-                    Some(captures[2].parse::<f64>()? * sign)
-                } else {
-                    None
-                };
+            let wind_speed = crate::components::wind_speed::parse(&visible_element.html());
 
             //dbg!(wind_speed);
 

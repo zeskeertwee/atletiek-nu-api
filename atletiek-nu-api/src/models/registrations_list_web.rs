@@ -38,9 +38,12 @@ pub enum EventStatus {
     Reserve,
     Unverified,
     CheckedIn,
+    Verified,
+    InReview,
 
     // Used when the scraper can't determine the status (so it's probably not used by the competition)
     Unknown,
+    Unexpected(String),
 }
 
 pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
@@ -106,8 +109,13 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
                 },
                 "name" => {
                     let a = element.select(&a_selector).next().unwrap();
-                    let a_text = a.text().next().unwrap().trim().replace("  ", " ");
-                    trace!("Got text (item.name) from name > a: {}", a_text);
+                    let mut a_texts = a.text();
+                    let mut a_text = String::new();
+
+                    while a_text.is_empty() || a_text.contains(".") {
+                        a_text = a_texts.next().unwrap().trim().replace("  ", " ");
+                        trace!("Got text (item.name) from name > a: {}", a_text);
+                    }
                     item.name = a_text.to_string();
 
                     let span_text = a.select(&span_detail_selector).next().unwrap().text().next().unwrap().trim();
@@ -168,9 +176,11 @@ pub fn parse(html: Html) -> anyhow::Result<RegistrationsWebList> {
                             "rejected" => EventStatus::Rejected,
                             "reserve" => EventStatus::Reserve,
                             "checked-in" => EventStatus::CheckedIn,
+                            "verified" => EventStatus::Verified,
+                            "in review" => EventStatus::InReview,
                             x => {
                                 error!("Unexpected event status: {}", x);
-                                EventStatus::Unknown
+                                EventStatus::Unexpected(kind)
                             }
                         };
                         let event_text = tipped_span.text().next().unwrap().trim();

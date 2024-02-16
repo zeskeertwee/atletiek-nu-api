@@ -23,6 +23,7 @@ mod tests;
 pub mod models;
 mod traits;
 mod util;
+mod components;
 
 use crate::models::competitions_list_web::CompetitionsWebList;
 pub use reqwest::{Request, StatusCode};

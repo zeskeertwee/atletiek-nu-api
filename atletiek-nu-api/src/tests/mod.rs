@@ -1,9 +1,14 @@
 use std::collections::HashMap;
+use std::ops::Add;
+use std::time::Duration;
 use chrono::NaiveDate;
 use tokio;
 use regex::Regex;
+use tokio::time::Instant;
 use crate::{get_competition_registrations, get_competition_registrations_web, get_athlete_event_result, get_athlete_profile};
+use crate::components::wind_speed::parse;
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
+use crate::models::athlete_profile::EventAttribute;
 use crate::models::registrations_list_web::EventStatus;
 
 #[tokio::test]
@@ -145,31 +150,68 @@ async fn test_relay_teams_38406() {
 async fn test_profile_921275() {
     let profile = get_athlete_profile(921275).await.unwrap();
 
-    for (k, v) in profile.personal_bests {
-        match k.as_str() {
+    assert_eq!(profile.name, "Marith Siekman");
+
+    for i in profile.personal_bests {
+        match i.event.as_str() {
             "60 meters" => {
-                assert_eq!(v.performance, 9.62);
-                assert_eq!(v.hand_measured, false);
-                assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
-                assert_eq!(v.country, "NLD");
-                assert_eq!(v.location, "Venlo");
+                assert_eq!(i.performance, 9.62);
+                assert_eq!(i.hand_measured, false);
+                assert_eq!(i.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
+                assert_eq!(i.country, "NLD");
+                assert_eq!(i.location, "Venlo");
+                assert_eq!(i.attribute, None);
             },
             "Shot put" => {
-                assert_eq!(v.performance, 5.98);
-                assert_eq!(v.hand_measured, false);
-                assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
-                assert_eq!(v.country, "NLD");
-                assert_eq!(v.location, "Venlo");
+                assert_eq!(i.performance, 5.98);
+                assert_eq!(i.hand_measured, false);
+                assert_eq!(i.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
+                assert_eq!(i.country, "NLD");
+                assert_eq!(i.location, "Venlo");
+                assert_eq!(i.attribute, Some(EventAttribute::Weight(2.0)));
             },
-            // TODO: fix multiple events with missing wind measurements/etc
-            //"Long jump" => {
-            //    assert_eq!(v.performance, 3.36);
-            //    assert_eq!(v.hand_measured, false);
-            //    assert_eq!(v.date, NaiveDate::from_ymd_opt(2016, 06, 25).unwrap());
-            //    assert_eq!(v.country, "NLD");
-            //    assert_eq!(v.location, "Weert");
-            //},
+            "Long jump" => {
+                if i.wind_speed.is_some() {
+                    assert_eq!(i.performance, 3.36);
+                    assert_eq!(i.hand_measured, false);
+                    assert_eq!(i.date, NaiveDate::from_ymd_opt(2016, 06, 25).unwrap());
+                    assert_eq!(i.country, "NLD");
+                    assert_eq!(i.location, "Weert");
+                    assert_eq!(i.attribute, None);
+                } else {
+                    assert_eq!(i.performance, 3.44);
+                    assert_eq!(i.hand_measured, false);
+                    assert_eq!(i.date, NaiveDate::from_ymd_opt(2016, 06, 09).unwrap());
+                    assert_eq!(i.country, "NLD");
+                    assert_eq!(i.location, "Venlo");
+                    assert_eq!(i.attribute, None);
+                }
+            },
             _ => (),
         }
+    }
+
+    for graph in profile.graphs {
+        match graph.event.as_str() {
+            "Long jump" => {
+                assert_eq!(graph.points.len(), 2);
+                assert_eq!(graph.specification, EventAttribute::All);
+                assert!(graph.points.contains(&(NaiveDate::from_ymd_opt(2016, 6, 9).unwrap(), 3.44)));
+                assert!(graph.points.contains(&(NaiveDate::from_ymd_opt(2016, 6, 25).unwrap(), 3.36)))
+            },
+            _ => (),
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_profile_parsing() {
+    let profiles = [862577, 876749, 871514, 862980];
+
+    for i in profiles {
+        let start = Instant::now();
+        println!("Parsing {}", i);
+        let _ = get_athlete_profile(i).await.unwrap();
+        tokio::time::sleep_until(start.add(Duration::from_secs(1))).await;
     }
 }

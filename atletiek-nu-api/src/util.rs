@@ -46,3 +46,8 @@ pub fn clean_html(html: &str) -> String {
 
     res
 }
+
+pub fn round_float_to_digits(n: f32, digits: u32) -> f32 {
+    let exp = 10.0f32.powi(digits as _);
+    (n * exp).round() / exp
+}
