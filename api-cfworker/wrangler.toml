@@ -1,6 +1,7 @@
 name = "worker-rust"
 main = "build/worker/shim.mjs"
 compatibility_date = "2023-03-22"
+send_metrics = false
 
 workers_dev = false
 route = { pattern = "atnapi.juandomingo.net/*", zone_id = "ead40ffbb9761bb3b9e5ef89b0d3e344" }
