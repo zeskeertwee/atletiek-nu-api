@@ -1,9 +1,15 @@
 name = "worker-rust"
 main = "build/worker/shim.mjs"
 compatibility_date = "2023-03-22"
+send_metrics = false
 
 workers_dev = false
 route = { pattern = "atnapi.juandomingo.net/*", zone_id = "ead40ffbb9761bb3b9e5ef89b0d3e344" }
+
+[[d1_databases]]
+binding = "atnapi-db"
+database_name = "atnapi"
+database_id = "8674e25b-30b6-4447-88c5-74ac8d2c79b2"
 
 [build]
 command = "cargo install -q worker-build && worker-build --release"
