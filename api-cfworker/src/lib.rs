@@ -38,7 +38,6 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         }
     }
 
-
     let router = Router::new();
 
     let mut cache_validity = Duration::from_secs(HOUR_S);
@@ -178,6 +177,27 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 }
             } else {
                 Response::error("Internal error", 500)
+            }
+        })
+        .get_async("/tools/find_athleteid/:participant_id", |req, ctx| async move {
+            if let Some(id) = ctx.param("id") {
+                if let Ok(id) = id.parse::<u32>() {
+                    let db = ctx.env.d1("atnapi-db").unwrap();
+                    let statement = db.prepare("SELECT athlete-id FROM athlete-id-matches WHERE participant-id = ?1");
+                    let query = statement.bind(&[id.into()]).unwrap();
+                    match query.first::<u64>(None).await.unwrap() {
+                        Some(athlete_id) => return Response::from_json(&athlete_id),
+                        None => console_log!("Not found in database!"),
+                    };
+
+                    let name = {
+
+                    };
+                } else {
+                    Response::error("Unable to parse ID", 400)
+                }
+            } else {
+                Response::error("Missing ID", 400)
             }
         })
         .run(req.clone().unwrap(), env)
