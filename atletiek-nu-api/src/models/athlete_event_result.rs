@@ -7,7 +7,7 @@ use log::{trace, warn};
 use crate::models::competition_registrations_list::CompetitionRegistrationList;
 
 const REGEX_EVENT: &'static str =
-    r#"https://www.atletiek.nu/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
+    r#"https://www.athletics.app/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {

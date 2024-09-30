@@ -4,6 +4,9 @@ use std::time::Duration;
 use worker::*;
 use atletiek_nu_api::chrono::{NaiveDate, offset, NaiveDateTime, ParseError, DateTime, Utc};
 use urlencoding;
+use console_error_panic_hook;
+
+const GIT_VERSION: &str = git_version::git_version!();
 
 const HOUR_S: u64 = 60 * 60;
 
@@ -17,6 +20,8 @@ fn format_http_timestamp(time: DateTime<Utc>) -> String {
 
 #[event(fetch)]
 async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
+    console_error_panic_hook::set_once();
+
     let poke_cache = if let Ok(Some(header)) = req.headers().get("X-poke-cache") {
         header == "true"
     } else {
@@ -182,6 +187,8 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         })
         .run(req.clone().unwrap(), env)
         .await?;
+
+    response.headers_mut().set("X-ATNAPI-Version", GIT_VERSION);
 
     let mut cache_resp = response.cloned().unwrap();
     let now = offset::Utc::now();

@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::Write;
 use crate::models::competitions_list::CompetitionsList;
 use arc_swap;
 use arc_swap::ArcSwapOption;
@@ -15,7 +17,11 @@ use crate::models::athlete_list::AthleteList;
 use crate::models::registrations_list::RegistrationsList;
 use crate::traits::CompetitionID;
 pub use chrono;
+use log::info;
+use rand::RngCore;
 pub use scraper;
+
+pub const GIT_VERSION: &str = git_version::git_version!();
 
 #[cfg(test)]
 mod tests;
@@ -67,26 +73,37 @@ pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
         sender.send((id, res.status())).unwrap();
     }
 
-    Ok(res.text().await?)
+    let text = res.text().await?;
+
+    if std::env::var("ATN_DUMP_REQ").is_ok() {
+        let n = rand::thread_rng().next_u64();
+
+        let mut file = File::create(format!("/tmp/atn_req_{}.html", n)).unwrap();
+        file.write_all(text.as_bytes()).unwrap();
+        info!("Dumped request to /tmp/atn_req_{}.html", n);
+    }
+
+    Ok(text)
 }
 
 #[deprecated]
 pub async fn search_competitions(q: &str) -> anyhow::Result<CompetitionsList> {
-    let url = format!("https://www.atletiek.nu/athleteapp.php?page=events&do=searchresults&country_iso2=NL&search={}&predefinedSearchTemplate=0&startDate=-30610225172&endDate=-30610225172&language=en_GB&version=1.16&improvePerformance=0", urlencoding::encode(q));
+    let url = format!("https://www.athletics.app/athleteapp.php?page=events&do=searchresults&country_iso2=NL&search={}&predefinedSearchTemplate=0&startDate=-30610225172&endDate=-30610225172&language=en_GB&version=1.16&improvePerformance=0", urlencoding::encode(q));
     let body = send_request(&url).await?;
     models::competitions_list::parse(Html::parse_fragment(&body))
 }
 
 pub async fn search_athletes(q: &str) -> anyhow::Result<AthleteList> {
-    let url = format!("https://www.atletiek.nu/athleteapp.php?page=athletes&do=searchresults&name={}&language=en_GB&version=1.16&improvePerformance=0", urlencoding::encode(q));
+    let url = format!("https://www.athletics.app/athleteapp.php?page=athletes&do=searchresults&name={}&language=en_GB&version=1.16&improvePerformance=0", urlencoding::encode(q));
     let body = send_request(&url).await?;
     models::athlete_list::parse(Html::parse_fragment(&body))
 }
 
+#[deprecated(note = "Please use get_competition_registrations_web instead")]
 pub async fn get_competition_registrations<C: CompetitionID>(
     competition_id: &C,
 ) -> anyhow::Result<RegistrationsList> {
-    let url = format!("https://www.atletiek.nu/athleteapp.php?page=event&do=registrations&event_id={}&version=1.16&language=en_GB&improvePerformance=0", competition_id.competition_id());
+    let url = format!("https://www.athletics.app/athleteapp.php?page=event&do=registrations&event_id={}&version=1.16&language=en_GB&improvePerformance=0", competition_id.competition_id());
     let body = send_request(&url).await?;
     //println!("{}", body);
     models::registrations_list::parse(Html::parse_fragment(&body))
@@ -95,15 +112,15 @@ pub async fn get_competition_registrations<C: CompetitionID>(
 pub async fn get_competition_registrations_web<C: CompetitionID>(
     competition_id: &C,
 ) -> anyhow::Result<RegistrationsWebList> {
-    let url = format!("https://www.atletiek.nu/wedstrijd/atleten/{}/", competition_id.competition_id());
+    let url = format!("https://www.athletics.app/wedstrijd/atleten/{}/", competition_id.competition_id());
     let body = send_request(&url).await?;
     models::registrations_list_web::parse(Html::parse_document(&body))
 }
 
-// curl 'https://www.atletiek.nu/atleet/main/1398565/' --compressed -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Cookie: atletieknu_Session=av73k220pflv57f599g4r0u5c2; __cmpcc=1; __cmpconsentx66181=CPtS9XAPtS9XAAfC1BENDICgAAAAAAAAAAigAAAS0gHAA4AKcAZ8BHgCVwFYAMEAdiA7YB3IEKQJEASjAloAAA; __cmpcccx66181=aBPtVahoAAAAAAA' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-User: ?1' > grep.html
+// curl 'https://www.athletics.app/atleet/main/1398565/' --compressed -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Cookie: atletieknu_Session=av73k220pflv57f599g4r0u5c2; __cmpcc=1; __cmpconsentx66181=CPtS9XAPtS9XAAfC1BENDICgAAAAAAAAAAigAAAS0gHAA4AKcAZ8BHgCVwFYAMEAdiA7YB3IEKQJEASjAloAAA; __cmpcccx66181=aBPtVahoAAAAAAA' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-User: ?1' > grep.html
 
 pub async fn get_athlete_event_result(participant_id: u32) -> anyhow::Result<AthleteEventResults> {
-    let url = format!("https://www.atletiek.nu/atleet/main/{}/", participant_id);
+    let url = format!("https://www.athletics.app/atleet/main/{}/", participant_id);
     let body = send_request(&url).await?;
     //std::fs::write("dump.html", &body).unwrap();
     //panic!("done");
@@ -112,7 +129,7 @@ pub async fn get_athlete_event_result(participant_id: u32) -> anyhow::Result<Ath
 }
 
 pub async fn get_athlete_profile(athlete_id: u32) -> anyhow::Result<AthleteProfile> {
-    let url = format!("https://www.atletiek.nu/atleet/profiel/{}", athlete_id);
+    let url = format!("https://www.athletics.app/atleet/profiel/{}", athlete_id);
     let body = send_request(&url).await?;
     models::athlete_profile::parse(Html::parse_document(&body))
 }
@@ -131,7 +148,7 @@ pub async fn search_competitions_for_time_period(
 ) -> anyhow::Result<CompetitionsWebList> {
     let start = NaiveDateTime::new(start, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).timestamp();
     let end = NaiveDateTime::new(end, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).timestamp();
-    let url = format!("https://www.atletiek.nu/feeder.php?page=search&do=events&country=NL&event_soort[]=in&event_soort[]=out&search={}&startDate={}&endDate={}", urlencoding::encode(q), start, end);
+    let url = format!("https://www.athletics.app/feeder.php?page=search&do=events&country=NL&event_soort[]=in&event_soort[]=out&search={}&startDate={}&endDate={}", urlencoding::encode(q), start, end);
     let body = send_request(&url).await?;
     models::competitions_list_web::parse(Html::parse_document(&body))
 }

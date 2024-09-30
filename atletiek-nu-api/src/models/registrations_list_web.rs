@@ -6,7 +6,7 @@ use super::registrations_list::{RegistrationsList, RegistrationsListElement};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"deelnemer_id=([0-9]{0,})"#;
 const REGEX_CATEGORY_AND_CLUB: &'static str = r#"([\s\S]{1,}) - ([\s\S]{1,})"#;
-const REGEX_RELAY_PARTICIPANT_ID: &'static str = r#"https://www.atletiek.nu/estafetteteam/main/(\d{1,})/"#;
+const REGEX_RELAY_PARTICIPANT_ID: &'static str = r#"https://www.athletics.app/estafetteteam/main/(\d{1,})/"#;
 
 pub type RegistrationsWebList = Vec<RegistrationsWebListElement>;
 
