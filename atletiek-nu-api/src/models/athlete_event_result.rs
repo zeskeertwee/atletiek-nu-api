@@ -168,7 +168,14 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 Some(v) => v,
             };
 
-            let data = data_element.value().attr("data").unwrap().parse()?;
+            dbg!(data_element.html());
+            let data = match data_element.value().attr("data").unwrap().parse() {
+                Ok(v) => v,
+                Err(e) => {
+                    trace!("Failed to parse data attr in sortData span: {} ({})", e, data_element.html());
+                    continue;
+                }
+            };
             let mut dnf = None;
             if data < 0.0 {
                 // invalid
