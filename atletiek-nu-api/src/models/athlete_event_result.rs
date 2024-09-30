@@ -168,7 +168,6 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
                 Some(v) => v,
             };
 
-            dbg!(data_element.html());
             let data = match data_element.value().attr("data").unwrap().parse() {
                 Ok(v) => v,
                 Err(e) => {
