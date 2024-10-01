@@ -77,6 +77,7 @@ impl AthleteEventResults {
 pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let selector = Selector::parse("#uitslagentabel > tbody").unwrap();
     let row_selector = Selector::parse("tr").unwrap();
+    let th_selector = Selector::parse("tr > th").unwrap();
     let row_element_selector = Selector::parse("td").unwrap();
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
@@ -92,6 +93,10 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         Some(v) => v,
         None => anyhow::bail!("No results found! (yet?)")
     };
+
+    if table.html().contains("Athletics Champs") {
+        bail!("Athletics champs results not supported yet!");
+    }
 
     for row in table.select(&row_selector) {
         let mut fields = row.select(&row_element_selector);
@@ -124,7 +129,13 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             if (idx + 1 == len && !is_combined_event) || (idx + 2 == len && is_combined_event) {
                 // the last one is position, if this isn't a combined-event, otherwise the single-last one is position
                 let position = match i.text().next() {
-                    Some(v) => v.parse().unwrap(),
+                    Some(v) => match v.parse() {
+                        Ok(v) => v,
+                        Err(e) => {
+                            warn!("Failed to parse position for event {}: {} ({})", event_name, e, v);
+                            continue;
+                        }
+                    },
                     None => {
                         // we don't have a position, maybe DNS/DNF?
                         warn!("No position for event {}", event_name);
@@ -145,12 +156,18 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
 
             // if combined-event AND the last one, this is points
             if idx + 1 == len && is_combined_event {
+                let mut items = vec![];
+                match i.text().next().unwrap().parse() {
+                    Ok(v) => items.push(EventResultItem::Points {
+                        amount: v
+                    }),
+                    Err(e) => warn!("Failed to parse combined-event points for event {}: {}", event_name, e)
+                }
+
                 results.push(EventResult {
                     event_name: event_name.clone(),
                     event_url: href.to_string(),
-                    items: vec![EventResultItem::Points {
-                        amount: i.text().next().unwrap().parse().unwrap()
-                    }],
+                    items,
                 });
             }
 
