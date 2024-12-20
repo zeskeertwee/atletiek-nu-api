@@ -8,9 +8,12 @@ use crate::models::competition_registrations_list::CompetitionRegistrationList;
 
 const REGEX_EVENT: &'static str =
     r#"https://www.athletics.app/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
+const REGEX_COMPETITION_ID: &'static str = r#"wedstrijd/main/([0-9]{0,})/"#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
+    pub name: String,
+    pub competition_id: u32,
     pub results: Vec<EventResult>,
     pub participated_in: CompetitionRegistrationList,
 }
@@ -77,11 +80,19 @@ impl AthleteEventResults {
 pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let selector = Selector::parse("#uitslagentabel > tbody").unwrap();
     let row_selector = Selector::parse("tr").unwrap();
+    let th_selector = Selector::parse("tr > th").unwrap();
     let row_element_selector = Selector::parse("td").unwrap();
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
+    let name_element_selector = Selector::parse("div.pageTitle").unwrap();
+    let competition_element_selector = Selector::parse("div#menubottom > a.hidden-xs").unwrap();
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
+    let re_competition_id = Regex::new(&REGEX_COMPETITION_ID).unwrap();
+
+    let name = html.select(&name_element_selector).next().unwrap().text().filter(|v| !v.trim().is_empty()).next().unwrap().trim().to_string().replace("  ", " ");
+    let competition_url = html.select(&competition_element_selector).next().unwrap().value().attr("href").unwrap();
+    let competition_id = re_competition_id.captures_iter(competition_url).next().unwrap()[1].parse().unwrap();
 
     let mut results = Vec::new();
     let participated_in = super::competition_registrations_list::parse(html.root_element())?;
@@ -92,6 +103,10 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         Some(v) => v,
         None => anyhow::bail!("No results found! (yet?)")
     };
+
+    if table.html().contains("Athletics Champs") {
+        bail!("Athletics champs results not supported yet!");
+    }
 
     for row in table.select(&row_selector) {
         let mut fields = row.select(&row_element_selector);
@@ -124,7 +139,13 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
             if (idx + 1 == len && !is_combined_event) || (idx + 2 == len && is_combined_event) {
                 // the last one is position, if this isn't a combined-event, otherwise the single-last one is position
                 let position = match i.text().next() {
-                    Some(v) => v.parse().unwrap(),
+                    Some(v) => match v.parse() {
+                        Ok(v) => v,
+                        Err(e) => {
+                            warn!("Failed to parse position for event {}: {} ({})", event_name, e, v);
+                            continue;
+                        }
+                    },
                     None => {
                         // we don't have a position, maybe DNS/DNF?
                         warn!("No position for event {}", event_name);
@@ -145,12 +166,18 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
 
             // if combined-event AND the last one, this is points
             if idx + 1 == len && is_combined_event {
+                let mut items = vec![];
+                match i.text().next().unwrap().parse() {
+                    Ok(v) => items.push(EventResultItem::Points {
+                        amount: v
+                    }),
+                    Err(e) => warn!("Failed to parse combined-event points for event {}: {}", event_name, e)
+                }
+
                 results.push(EventResult {
                     event_name: event_name.clone(),
                     event_url: href.to_string(),
-                    items: vec![EventResultItem::Points {
-                        amount: i.text().next().unwrap().parse().unwrap()
-                    }],
+                    items,
                 });
             }
 
@@ -231,5 +258,5 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     }
 
 
-    Ok(AthleteEventResults { results: res, participated_in })
+    Ok(AthleteEventResults { name, competition_id, results: res, participated_in })
 }

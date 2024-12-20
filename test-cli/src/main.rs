@@ -21,20 +21,20 @@ async fn main() {
     //.unwrap();
     //dbg!(a);
 
-    //let a = get_athlete_event_result(1708289).await.unwrap();
+    //let a = get_athlete_event_result(1592145).await.unwrap();
     //dbg!(a);
     //let a = search_athletes("femke bol").unwrap();
     //dbg!(a);
     //let c = search_competitions("scopias").unwrap();
     //dbg!(c);
 
-    let a = atletiek_nu_api::get_competition_registrations_web(&40350).await.unwrap();
-    dbg!(&a);
+    //let a = atletiek_nu_api::get_competition_registrations_web(&40350).await.unwrap();
+    //dbg!(&a);
     //let b = atletiek_nu_api::get_competition_registrations_web(&38774).await.unwrap();
     //dbg!(b);
 
-    //let a = get_athlete_profile(862577).await.unwrap();
-    //dbg!(a);
+    let a = get_athlete_profile(872863).await.unwrap();
+    dbg!(a);
 
     print_channel_updates(req_rx, sta_rx);
 }
