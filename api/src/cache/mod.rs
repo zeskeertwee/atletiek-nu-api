@@ -38,6 +38,9 @@ pub enum CachedRequest {
     SearchAthletes {
         query: String
     },
+    GetAthleteProfile {
+        id: u32
+    },
 }
 
 #[derive(Serialize)]
@@ -84,6 +87,7 @@ impl CachedRequest {
             Self::GetCompetitionRegistrations { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionResults { .. } => Duration::from_secs(HOUR_IN_S * 24),
             Self::SearchAthletes { .. } => Duration::from_secs(HOUR_IN_S * 12),
+            Self::GetAthleteProfile { .. } => Duration::from_secs(HOUR_IN_S * 12),
         }
     }
 
@@ -118,6 +122,9 @@ impl CachedRequest {
                 }).unwrap()),
             }
             Self::SearchAthletes { query } => atletiek_nu_api::search_athletes(&query)
+                .await
+                .map(|v| rocket::serde::json::to_string(&v).unwrap()),
+            Self::GetAthleteProfile { id } => atletiek_nu_api::get_athlete_profile(*id)
                 .await
                 .map(|v| rocket::serde::json::to_string(&v).unwrap())
         } {

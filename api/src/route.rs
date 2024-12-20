@@ -37,4 +37,8 @@ pub async fn search_athletes(
     req.run(cache, ratelimiter).await
 }
 
-// TODO: add /athletes/profile/[id] endpoint
+#[get("/athletes/profile/<id>")]
+pub async fn get_athlete_profile(id: u32, cache: RequestCache, ratelimiter: &State<RateLimiter>) -> ApiResponse {
+    let req = CachedRequest::new_get_results(id);
+    req.run(cache, ratelimiter).await
+}
