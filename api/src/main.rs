@@ -1,7 +1,4 @@
 mod cache;
-mod get_registrations;
-mod get_results;
-mod search_competitions;
 mod route;
 mod util;
 
