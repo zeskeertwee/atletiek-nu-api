@@ -80,7 +80,6 @@ impl AthleteEventResults {
 pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let selector = Selector::parse("#uitslagentabel > tbody").unwrap();
     let row_selector = Selector::parse("tr").unwrap();
-    let th_selector = Selector::parse("tr > th").unwrap();
     let row_element_selector = Selector::parse("td").unwrap();
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
@@ -101,7 +100,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         .select(&selector)
         .next() {
         Some(v) => v,
-        None => anyhow::bail!("No results found! (yet?)")
+        None => bail!("No results found! (yet?)")
     };
 
     if table.html().contains("Athletics Champs") {

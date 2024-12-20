@@ -64,13 +64,13 @@ pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
     let id = REQUEST_COUNTER.fetch_add(1, Ordering::Relaxed);
 
     if let Some(sender) = REQUEST_SENDER.load().deref() {
-        sender.send((id, req.try_clone().unwrap())).unwrap();
+        sender.send((id, req.try_clone().unwrap()))?;
     }
 
     let res = client.execute(req).await?;
 
     if let Some(sender) = STATUS_SENDER.load().deref() {
-        sender.send((id, res.status())).unwrap();
+        sender.send((id, res.status()))?;
     }
 
     let text = res.text().await?;
@@ -78,8 +78,8 @@ pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
     if std::env::var("ATN_DUMP_REQ").is_ok() {
         let n = rand::thread_rng().next_u64();
 
-        let mut file = File::create(format!("/tmp/atn_req_{}.html", n)).unwrap();
-        file.write_all(text.as_bytes()).unwrap();
+        let mut file = File::create(format!("/tmp/atn_req_{}.html", n))?;
+        file.write_all(text.as_bytes())?;
         info!("Dumped request to /tmp/atn_req_{}.html", n);
     }
 
@@ -117,8 +117,6 @@ pub async fn get_competition_registrations_web<C: CompetitionID>(
     models::registrations_list_web::parse(Html::parse_document(&body))
 }
 
-// curl 'https://www.athletics.app/atleet/main/1398565/' --compressed -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Cookie: atletieknu_Session=av73k220pflv57f599g4r0u5c2; __cmpcc=1; __cmpconsentx66181=CPtS9XAPtS9XAAfC1BENDICgAAAAAAAAAAigAAAS0gHAA4AKcAZ8BHgCVwFYAMEAdiA7YB3IEKQJEASjAloAAA; __cmpcccx66181=aBPtVahoAAAAAAA' -H 'Upgrade-Insecure-Requests: 1' -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-User: ?1' > grep.html
-
 pub async fn get_athlete_event_result(participant_id: u32) -> anyhow::Result<AthleteEventResults> {
     let url = format!("https://www.athletics.app/atleet/main/{}/", participant_id);
     let body = send_request(&url).await?;
@@ -146,8 +144,8 @@ pub async fn search_competitions_for_time_period(
     end: NaiveDate,
     q: &str,
 ) -> anyhow::Result<CompetitionsWebList> {
-    let start = NaiveDateTime::new(start, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).timestamp();
-    let end = NaiveDateTime::new(end, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).timestamp();
+    let start = NaiveDateTime::new(start, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
+    let end = NaiveDateTime::new(end, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
     let url = format!("https://www.athletics.app/feeder.php?page=search&do=events&country=NL&event_soort[]=in&event_soort[]=out&search={}&startDate={}&endDate={}", urlencoding::encode(q), start, end);
     let body = send_request(&url).await?;
     models::competitions_list_web::parse(Html::parse_document(&body))

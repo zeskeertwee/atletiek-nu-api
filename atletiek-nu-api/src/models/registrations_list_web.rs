@@ -2,7 +2,6 @@ use log::{error, trace, warn};
 use regex::Regex;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use super::registrations_list::{RegistrationsList, RegistrationsListElement};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"deelnemer_id=([0-9]{0,})"#;
 const REGEX_CATEGORY_AND_CLUB: &'static str = r#"([\s\S]{1,}) - ([\s\S]{1,})"#;

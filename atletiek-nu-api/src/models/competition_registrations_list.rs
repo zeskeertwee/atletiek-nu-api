@@ -1,7 +1,6 @@
 use chrono::NaiveDate;
 use regex::Regex;
-use scraper::{ElementRef, Html, Selector};
-use scraper::node::Element;
+use scraper::{ElementRef, Selector};
 use serde::{Deserialize, Serialize};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"https://www.athletics.app/atleet/main/([\d]{0,})/"#;
