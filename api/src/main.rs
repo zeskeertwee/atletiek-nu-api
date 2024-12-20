@@ -2,6 +2,7 @@ mod cache;
 mod get_registrations;
 mod get_results;
 mod search_competitions;
+mod route;
 mod util;
 
 #[macro_use]
@@ -105,14 +106,13 @@ async fn main() -> Result<(), rocket::Error> {
     let cache_managed = cache.clone();
     rocket::build()
         .mount(
-            "/competitions/search",
-            routes![search_competitions::search_competitions],
+            "/",
+            routes![
+                route::search_competitions,
+                route::get_registrations,
+                route::get_results,
+            ],
         )
-        .mount(
-            "/competitions/registrations",
-            routes![get_registrations::get_registrations],
-        )
-        .mount("/competitions/results", routes![get_results::get_results])
         .manage(cache_managed)
         .manage(ratelimiter)
         .ignite()
