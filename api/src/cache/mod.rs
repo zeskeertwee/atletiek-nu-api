@@ -80,6 +80,10 @@ impl CachedRequest {
         Self::SearchAthletes{ query }
 
     }
+    pub fn new_get_athlete_profile(id: u32) -> Self {
+        Self::GetAthleteProfile{ id }
+
+    }
 
     fn cache_duration(&self) -> Duration {
         match self {
