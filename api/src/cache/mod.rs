@@ -35,6 +35,12 @@ pub enum CachedRequest {
     GetCompetitionResults {
         id: u32,
     },
+    SearchAthletes {
+        query: String
+    },
+    GetAthleteProfile {
+        id: u32
+    },
 }
 
 #[derive(Serialize)]
@@ -70,12 +76,22 @@ impl CachedRequest {
     pub fn new_get_results(id: u32) -> Self {
         Self::GetCompetitionResults { id }
     }
+    pub fn new_search_athletes(query: String) -> Self {
+        Self::SearchAthletes{ query }
+
+    }
+    pub fn new_get_athlete_profile(id: u32) -> Self {
+        Self::GetAthleteProfile{ id }
+
+    }
 
     fn cache_duration(&self) -> Duration {
         match self {
             Self::SearchCompetitions { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionRegistrations { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionResults { .. } => Duration::from_secs(HOUR_IN_S * 24),
+            Self::SearchAthletes { .. } => Duration::from_secs(HOUR_IN_S * 12),
+            Self::GetAthleteProfile { .. } => Duration::from_secs(HOUR_IN_S * 12),
         }
     }
 
@@ -98,7 +114,7 @@ impl CachedRequest {
                 .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
             Self::GetCompetitionRegistrations { id } => {
-                atletiek_nu_api::get_competition_registrations(id)
+                atletiek_nu_api::get_competition_registrations_web(id)
                     .await
                     .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
@@ -109,6 +125,12 @@ impl CachedRequest {
                     error: e.to_string()
                 }).unwrap()),
             }
+            Self::SearchAthletes { query } => atletiek_nu_api::search_athletes(&query)
+                .await
+                .map(|v| rocket::serde::json::to_string(&v).unwrap()),
+            Self::GetAthleteProfile { id } => atletiek_nu_api::get_athlete_profile(*id)
+                .await
+                .map(|v| rocket::serde::json::to_string(&v).unwrap())
         } {
             Ok(v) => {
                 cache.insert(self, v.clone());
