@@ -8,9 +8,12 @@ use crate::models::competition_registrations_list::CompetitionRegistrationList;
 
 const REGEX_EVENT: &'static str =
     r#"https://www.athletics.app/wedstrijd/uitslagenonderdeel/[\d]{0,}/([A-z\d-]{0,})/"#;
+const REGEX_COMPETITION_ID: &'static str = r#"wedstrijd/main/([0-9]{0,})/"#;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AthleteEventResults {
+    pub name: String,
+    pub competition_id: u32,
     pub results: Vec<EventResult>,
     pub participated_in: CompetitionRegistrationList,
 }
@@ -82,7 +85,14 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let a_selector = Selector::parse("a").unwrap();
     let data_span_selector = Selector::parse("span.sortData").unwrap();
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
+    let name_element_selector = Selector::parse("div.pageTitle").unwrap();
+    let competition_element_selector = Selector::parse("div#menubottom > a.hidden-xs").unwrap();
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
+    let re_competition_id = Regex::new(&REGEX_COMPETITION_ID).unwrap();
+
+    let name = html.select(&name_element_selector).next().unwrap().text().filter(|v| !v.trim().is_empty()).next().unwrap().trim().to_string().replace("  ", " ");
+    let competition_url = html.select(&competition_element_selector).next().unwrap().value().attr("href").unwrap();
+    let competition_id = re_competition_id.captures_iter(competition_url).next().unwrap()[1].parse().unwrap();
 
     let mut results = Vec::new();
     let participated_in = super::competition_registrations_list::parse(html.root_element())?;
@@ -248,5 +258,5 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     }
 
 
-    Ok(AthleteEventResults { results: res, participated_in })
+    Ok(AthleteEventResults { name, competition_id, results: res, participated_in })
 }
