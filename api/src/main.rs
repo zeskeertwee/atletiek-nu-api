@@ -108,6 +108,7 @@ async fn main() -> Result<(), rocket::Error> {
                 route::search_competitions,
                 route::get_registrations,
                 route::get_results,
+                route::search_athletes,
             ],
         )
         .manage(cache_managed)

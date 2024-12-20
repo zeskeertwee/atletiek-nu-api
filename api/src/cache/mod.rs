@@ -35,6 +35,9 @@ pub enum CachedRequest {
     GetCompetitionResults {
         id: u32,
     },
+    SearchAthletes {
+        query: String
+    },
 }
 
 #[derive(Serialize)]
@@ -70,12 +73,17 @@ impl CachedRequest {
     pub fn new_get_results(id: u32) -> Self {
         Self::GetCompetitionResults { id }
     }
+    pub fn new_search_athletes(query: String) -> Self {
+        Self::SearchAthletes{ query }
+
+    }
 
     fn cache_duration(&self) -> Duration {
         match self {
             Self::SearchCompetitions { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionRegistrations { .. } => Duration::from_secs(HOUR_IN_S * 12),
             Self::GetCompetitionResults { .. } => Duration::from_secs(HOUR_IN_S * 24),
+            Self::SearchAthletes { .. } => Duration::from_secs(HOUR_IN_S * 12),
         }
     }
 
@@ -109,6 +117,9 @@ impl CachedRequest {
                     error: e.to_string()
                 }).unwrap()),
             }
+            Self::SearchAthletes { query } => atletiek_nu_api::search_athletes(&query)
+                .await
+                .map(|v| rocket::serde::json::to_string(&v).unwrap())
         } {
             Ok(v) => {
                 cache.insert(self, v.clone());

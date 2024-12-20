@@ -11,7 +11,6 @@ pub async fn search_competitions(
     cache: RequestCache,
     ratelimiter: &State<RateLimiter>
 ) -> ApiResponse {
-    println!("lol");
     let req = CachedRequest::new_search_competitions(start.0, end.0, query.clone());
     req.run(cache, ratelimiter).await
 }
@@ -28,5 +27,14 @@ pub async fn get_results(id: u32, cache: RequestCache, ratelimiter: &State<RateL
     req.run(cache, ratelimiter).await
 }
 
-// TODO: add /athletes/search/[query] endpoint
+#[get("/athletes/search/<query>")]
+pub async fn search_athletes(
+    query: String,
+    cache: RequestCache,
+    ratelimiter: &State<RateLimiter>,
+) -> ApiResponse {
+    let req = CachedRequest::new_search_athletes(query.clone());
+    req.run(cache, ratelimiter).await
+}
+
 // TODO: add /athletes/profile/[id] endpoint
