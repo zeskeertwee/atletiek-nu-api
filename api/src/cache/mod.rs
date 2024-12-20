@@ -98,7 +98,7 @@ impl CachedRequest {
                 .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
             Self::GetCompetitionRegistrations { id } => {
-                atletiek_nu_api::get_competition_registrations(id)
+                atletiek_nu_api::get_competition_registrations_web(id)
                     .await
                     .map(|v| rocket::serde::json::to_string(&v).unwrap())
             }
