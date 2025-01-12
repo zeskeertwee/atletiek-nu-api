@@ -1,6 +1,6 @@
 use std::ops::Sub;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use serde::{Serialize, Serializer, Deserialize, Deserializer, de::Error};
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
 
 pub fn serialize<S>(instant: &Instant, serializer: S) -> Result<S::Ok, S::Error>
     where

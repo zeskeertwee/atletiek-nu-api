@@ -6,9 +6,8 @@ mod util;
 extern crate rocket;
 
 use crate::cache::Cache;
-use log::{trace, info};
+use log::trace;
 use rocket::tokio;
-use rocket::{Build, Rocket};
 use std::sync::mpsc::sync_channel;
 use std::time::Duration;
 use leaky_bucket::RateLimiter;

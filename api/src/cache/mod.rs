@@ -9,7 +9,6 @@ use crate::util::ApiResponse;
 use atletiek_nu_api::chrono::NaiveDate;
 use dashmap::DashMap;
 use log::trace;
-use rocket::http::ext::IntoCollection;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{Request, State};
 use std::ops::Deref;
@@ -267,7 +266,6 @@ impl<'r> FromRequest<'r> for RequestCache {
                 .guard::<&State<Cache>>()
                 .await
                 .unwrap()
-                .deref()
                 .deref()
                 .clone(),
         })
