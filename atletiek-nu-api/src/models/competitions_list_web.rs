@@ -16,6 +16,7 @@ pub struct CompetitionsListWebElement {
     pub date: NaiveDate,
     pub name: String,
     pub location: String,
+    pub club: String,
     pub registrations: u32,
     pub results_availible: bool,
     pub club_members_only: bool,
@@ -85,6 +86,10 @@ pub fn parse(html: Html) -> anyhow::Result<CompetitionsWebList> {
             .to_string();
 
         let location = i.select(&location_selector).next().unwrap().inner_html();
+        let mut ls = location.split(", ");
+        let club = ls.next().unwrap().to_owned();
+        let location = ls.next().unwrap().to_owned();
+
         let registrations = {
             let text = i
                 .select(&registrations_selector)
@@ -111,6 +116,7 @@ pub fn parse(html: Html) -> anyhow::Result<CompetitionsWebList> {
             date,
             registrations,
             location,
+            club,
             competition_id: id,
             club_members_only,
             results_availible,
