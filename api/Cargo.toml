@@ -6,14 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = { version = "0.5.0-rc.3", features = ["json"] }
-dashmap = { version = "5.4.0", features = ["serde"] }
-log = "0.4.19"
-serde = { version = "1.0.164", features = ["derive", "rc"] }
-leaky-bucket = "1.0.1"
-self_update = { version = "0.38.0", features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "compression-zip-bzip2"] }
-anyhow = "1.0.79"
-serde_with = "3.4.0"
+rocket = { version = "0.5.1", features = ["json"] }
+dashmap = { version = "6.1.0", features = ["serde"] }
+log = "0.4.22"
+serde = { version = "1.0.216", features = ["derive", "rc"] }
+leaky-bucket = "1.1.2"
+self_update = { version = "0.41.0", features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "compression-zip-bzip2"] }
+anyhow = "1.0.94"
 
 [dependencies.atletiek_nu_api]
 path = "../atletiek-nu-api"

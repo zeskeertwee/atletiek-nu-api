@@ -1,13 +1,12 @@
 use atletiek_nu_api::chrono::{NaiveDate, ParseError};
-use rocket::form::{DataField, FromFormField, ValueField};
-use rocket::http::{Header, Status};
+use rocket::form::{FromFormField, ValueField};
+use rocket::http::Status;
 use rocket::request::FromParam;
 use rocket::response::Responder;
 use rocket::serde::Serialize;
 use rocket::{Request, Response};
 use std::ops::Deref;
 use std::time::Instant;
-use rocket::futures::future::err;
 
 pub struct RequestNaiveDate(pub NaiveDate);
 
@@ -91,11 +90,11 @@ impl ApiResponse {
         Self::NotFound(error.to_string())
     }
 
-    pub fn nocache(mut self) -> Self {
+    pub fn nocache(self) -> Self {
         self.add_header("X-Cached", "false")
     }
 
-    pub fn cached(mut self, age: Instant) -> Self {
+    pub fn cached(self, age: Instant) -> Self {
         self.add_header("X-Cached", "true")
             .add_header("X-Cached-Age", &age.elapsed().as_secs().to_string())
     }

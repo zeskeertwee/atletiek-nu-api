@@ -10,7 +10,6 @@ use atletiek_nu_api::chrono::NaiveDate;
 use atletiek_nu_api::models::country::Country;
 use dashmap::DashMap;
 use log::trace;
-use rocket::http::ext::IntoCollection;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{Request, State};
 use std::ops::Deref;
@@ -271,7 +270,6 @@ impl<'r> FromRequest<'r> for RequestCache {
                 .guard::<&State<Cache>>()
                 .await
                 .unwrap()
-                .deref()
                 .deref()
                 .clone(),
         })
