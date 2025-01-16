@@ -32,6 +32,7 @@ mod util;
 mod components;
 
 use crate::models::competitions_list_web::CompetitionsWebList;
+use crate::models::country::Country;
 pub use reqwest::{Request, StatusCode};
 use crate::models::athlete_profile::AthleteProfile;
 use crate::models::registrations_list_web::RegistrationsWebList;
@@ -135,18 +136,21 @@ pub async fn get_athlete_profile(athlete_id: u32) -> anyhow::Result<AthleteProfi
 pub async fn get_competitions_for_time_period(
     start: NaiveDate,
     end: NaiveDate,
+    country: Country,
 ) -> anyhow::Result<CompetitionsWebList> {
-    search_competitions_for_time_period(start, end, "").await
+    search_competitions_for_time_period(start, end, country, "").await
 }
 
 pub async fn search_competitions_for_time_period(
     start: NaiveDate,
     end: NaiveDate,
+    country: Country,
     q: &str,
 ) -> anyhow::Result<CompetitionsWebList> {
     let start = NaiveDateTime::new(start, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
     let end = NaiveDateTime::new(end, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
-    let url = format!("https://www.athletics.app/feeder.php?page=search&do=events&country=NL&event_soort[]=in&event_soort[]=out&search={}&startDate={}&endDate={}", urlencoding::encode(q), start, end);
+    let url = format!("https://www.athletics.app/feeder.php?page=search&do=events&country={}&event_soort[]=in&event_soort[]=out&search={}&startDate={}&endDate={}", 
+        urlencoding::encode(country.to_str()), urlencoding::encode(q), start, end);
     let body = send_request(&url).await?;
     models::competitions_list_web::parse(Html::parse_document(&body))
 }

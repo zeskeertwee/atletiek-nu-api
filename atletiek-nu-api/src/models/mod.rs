@@ -6,3 +6,4 @@ pub mod registrations_list;
 pub mod registrations_list_web;
 pub mod athlete_profile;
 pub mod competition_registrations_list;
+pub mod country;

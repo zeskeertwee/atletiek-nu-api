@@ -7,6 +7,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use crate::util::ApiResponse;
 use atletiek_nu_api::chrono::NaiveDate;
+use atletiek_nu_api::models::country::Country;
 use dashmap::DashMap;
 use log::trace;
 use rocket::http::ext::IntoCollection;
@@ -28,6 +29,7 @@ pub enum CachedRequest {
         start: NaiveDate,
         end: NaiveDate,
         query: String,
+        country: Country,
     },
     GetCompetitionRegistrations {
         id: u32,
@@ -54,6 +56,7 @@ impl CachedRequest {
         start: NaiveDate,
         end: NaiveDate,
         query: Option<String>,
+        country: Country,
     ) -> Self {
         let query = match query {
             Some(v) => {
@@ -66,7 +69,7 @@ impl CachedRequest {
             None => "".to_string(),
         };
 
-        Self::SearchCompetitions { start, end, query }
+        Self::SearchCompetitions { start, end, query, country }
     }
 
     pub fn new_get_registrations(id: u32) -> Self {
@@ -104,10 +107,11 @@ impl CachedRequest {
         ratelimiter.acquire_one().await;
 
         match match &self {
-            Self::SearchCompetitions { start, end, query } => {
+            Self::SearchCompetitions { start, end, query, country } => {
                 atletiek_nu_api::search_competitions_for_time_period(
                     start.to_owned(),
                     end.to_owned(),
+                    country.to_owned(),
                     &query,
                 )
                 .await

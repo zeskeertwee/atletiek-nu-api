@@ -3,6 +3,7 @@ use std::ops::Add;
 use std::time::Duration;
 use worker::*;
 use atletiek_nu_api::chrono::{NaiveDate, offset, NaiveDateTime, ParseError, DateTime, Utc};
+use atletiek_nu_api::models::country::Country;
 use urlencoding;
 use console_error_panic_hook;
 
@@ -172,9 +173,15 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                     return Response::error("End date is before start date", 400);
                 }
 
+                let country = pairs.get("country").map(|v| v.to_owned()).unwrap_or_default();
+                let country = match Country::parse(country.as_str()) {
+                    Ok(country) => country,
+                    Err(e) => return Response::error(e.to_string(), 400),
+                };
+
                 let query = pairs.get("query").map(|v| v.to_owned()).unwrap_or_default();
 
-                match atletiek_nu_api::search_competitions_for_time_period(start_date, end_date, &query).await {
+                match atletiek_nu_api::search_competitions_for_time_period(start_date, end_date, country, &query).await {
                     Ok(r) => Response::from_json(&r),
                     Err(e) => {
                         console_error!("Error searching competitions: {}", e);

@@ -1,6 +1,5 @@
 use atletiek_nu_api::{
-    chrono::NaiveDate, get_competition_registrations, get_competitions_for_time_period, scraper,
-    search_athletes, search_competitions_for_time_period, get_athlete_event_result, get_athlete_profile
+    chrono::NaiveDate, get_athlete_event_result, get_athlete_profile, get_competition_registrations, get_competitions_for_time_period, models::country::Country, scraper, search_athletes, search_competitions_for_time_period
 };
 use std::sync::mpsc::{sync_channel, Receiver};
 use tokio;
@@ -13,13 +12,15 @@ async fn main() {
 
     atletiek_nu_api::set_request_callback(req_tx, sta_tx);
 
-    //let a = search_competitions_for_time_period(
-    //    NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
-    //    NaiveDate::from_ymd_opt(2023, 12, 1).unwrap(),
-    //    "scopias",
-    //)
-    //.unwrap();
-    //dbg!(a);
+    let a = search_competitions_for_time_period(
+       NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+       NaiveDate::from_ymd_opt(2023, 12, 1).unwrap(),
+        Country::parse("Be").unwrap(),
+       "",
+    )
+    .await
+    .unwrap();
+    dbg!(a);
 
     //let a = get_athlete_event_result(1592145).await.unwrap();
     //dbg!(a);
@@ -33,8 +34,8 @@ async fn main() {
     //let b = atletiek_nu_api::get_competition_registrations_web(&38774).await.unwrap();
     //dbg!(b);
 
-    let a = get_athlete_profile(872863).await.unwrap();
-    dbg!(a);
+    // let a = get_athlete_profile(872863).await.unwrap();
+    // dbg!(a);
 
     print_channel_updates(req_rx, sta_rx);
 }
