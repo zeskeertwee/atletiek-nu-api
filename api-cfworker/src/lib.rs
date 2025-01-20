@@ -3,7 +3,7 @@ use std::ops::Add;
 use std::time::Duration;
 use worker::*;
 use atletiek_nu_api::chrono::{NaiveDate, offset, NaiveDateTime, ParseError, DateTime, Utc};
-use atletiek_nu_api::models::country::Country;
+use atletiek_nu_api::Country;
 use urlencoding;
 use console_error_panic_hook;
 

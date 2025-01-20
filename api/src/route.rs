@@ -2,7 +2,7 @@ use leaky_bucket::RateLimiter;
 use rocket::State;
 use crate::cache::{CachedRequest, RequestCache};
 use crate::util::{ApiResponse, RequestNaiveDate};
-use atletiek_nu_api::models::country::Country;
+use atletiek_nu_api::Country;
 
 #[get("/competitions/search?<start>&<end>&<query>&<country>")]
 pub async fn search_competitions(

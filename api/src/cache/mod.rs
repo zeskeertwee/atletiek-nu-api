@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use crate::util::ApiResponse;
 use atletiek_nu_api::chrono::NaiveDate;
-use atletiek_nu_api::models::country::Country;
+use atletiek_nu_api::Country;
 use dashmap::DashMap;
 use log::trace;
 use rocket::request::{FromRequest, Outcome};

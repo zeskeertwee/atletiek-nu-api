@@ -32,7 +32,7 @@ mod util;
 mod components;
 
 use crate::models::competitions_list_web::CompetitionsWebList;
-use crate::models::country::Country;
+pub use crate::components::country::Country;
 pub use reqwest::{Request, StatusCode};
 use crate::models::athlete_profile::AthleteProfile;
 use crate::models::registrations_list_web::RegistrationsWebList;
