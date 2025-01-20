@@ -17,11 +17,20 @@ use rpr;
 const RATELIMIT_REFIL_AMOUNT: u16 = 1;
 const RATELIMIT_REFIL_INTERVAL: Duration = Duration::from_millis(1000);
 const RPR_SHARED_KEY: Option<&'static str> = option_env!("RPR_SHARED_KEY");
+const RPR_URL: Option<&'static str> = option_env!("RPR_URL");
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     if let Some(key) = RPR_SHARED_KEY {
-        rpr::initialize([41, 54, 52, 41, 50, 49], &key);
+        let cfg = rpr::Configuration {
+            interactive: true,
+            use_fallback: false,
+            address: RPR_URL.unwrap().to_string(),
+            app_id: [41, 54, 52, 41, 50, 49],
+            fallback_address: String::new(), // unused
+            shared_key: key.to_string()
+        };
+        rpr::initialize(cfg);
     } else {
         println!("Missing shared key during compilation, crash reporting disabled.");
     }
