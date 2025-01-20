@@ -36,6 +36,7 @@ pub use crate::components::country::Country;
 pub use reqwest::{Request, StatusCode};
 use crate::models::athlete_profile::AthleteProfile;
 use crate::models::registrations_list_web::RegistrationsWebList;
+use crate::models::competition_event_list::CompetitionEvent;
 
 static REQUEST_SENDER: ArcSwapOption<SyncSender<(usize, Request)>> = ArcSwapOption::const_empty();
 static STATUS_SENDER: ArcSwapOption<SyncSender<(usize, StatusCode)>> = ArcSwapOption::const_empty();
@@ -153,4 +154,10 @@ pub async fn search_competitions_for_time_period(
         urlencoding::encode(country.to_str()), urlencoding::encode(q), start, end);
     let body = send_request(&url).await?;
     models::competitions_list_web::parse(Html::parse_document(&body))
+}
+
+pub async fn get_competition_event_ids<C: CompetitionID>(competition_id: &C) -> anyhow::Result<Vec<CompetitionEvent>> {
+    let url = format!("https://www.athletics.app/wedstrijd/chronoloog/{}/", competition_id.competition_id());
+    let body = send_request(&url).await?;
+    models::competition_event_list::parse(Html::parse_document(&body))
 }

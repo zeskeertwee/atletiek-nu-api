@@ -5,11 +5,12 @@ use chrono::NaiveDate;
 use tokio;
 use regex::Regex;
 use tokio::time::Instant;
-use crate::{get_competition_registrations, get_competition_registrations_web, get_athlete_event_result, get_athlete_profile};
+use crate::{get_competition_registrations, get_competition_registrations_web, get_athlete_event_result, get_athlete_profile, get_competition_event_ids};
 use crate::components::wind_speed::parse;
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
 use crate::models::athlete_profile::EventAttribute;
 use crate::models::registrations_list_web::EventStatus;
+use crate::models::competition_event_list;
 
 #[tokio::test]
 async fn test_get_participant_list_39657() {
@@ -214,4 +215,10 @@ async fn test_profile_parsing() {
         let _ = get_athlete_profile(i).await.unwrap();
         tokio::time::sleep_until(start.add(Duration::from_secs(1))).await;
     }
+}
+
+#[tokio::test]
+async fn test_get_event_list_41778() {
+    let events = get_competition_event_ids(&41778).await.unwrap();
+    assert_eq!(10, events.len())
 }
