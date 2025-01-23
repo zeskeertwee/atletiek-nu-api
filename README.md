@@ -1,5 +1,5 @@
 # atletiek-nu-api
-A work-in-progress attempt at scraping the [atletiek.nu](https://atletiek.nu) website for data. Kinda works but far from complete.
+A work-in-progress attempt at scraping the [athletics.app](https://athletics.app) (previously [atletiek.nu](https://atletiek.nu) but they changed their domain) website for data. Kinda works but far from complete.
 
 What it can do as of now:
 - Search for competitions
@@ -8,14 +8,12 @@ What it can do as of now:
 - Search athletes and list their profile with PB's, a list of all preformances in a specific category, and all competitions they participated in
 - List competitions for a given time period
 
+**Note:** The scraper still has many bugs and will not be able to scrape all pages. Please create an issue if you encounter a bug.
+
 # HTTP API
 An api is hosted at `https://atnapi.juandomingo.net` using cloudflare workers.
 [Documentation](./api-cfworker/README.md)
 
 # Local HTTP API
-*I have stopped updating the rocket API in favor of an API on cloudflare workers.*
-
-However, it should be fairly trivial to update the rocket API to support all endpoints. Feel free to open a PR to update it.
-
 There is also a HTTP api availible for download from the releases on [github.com](https://github.com/zeskeertwee/atletiek-nu-api/releases)
 Or, alternatively, you can compile the HTTP api from scratch after cloning the repository like so: `cargo build --release --bin api`
