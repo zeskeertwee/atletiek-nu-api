@@ -1,6 +1,6 @@
 [package]
 name = "api"
-version = "0.2.4"
+version = "0.2.4-1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,4 +19,4 @@ path = "../atletiek-nu-api"
 
 [dependencies.rpr]
 git = "https://github.com/zeskeertwee/rpr"
-rev = "b8ccee4de37c4d8314265cec862396bd0fa4fc71"
+rev = "3e8d9948074855edf37b9acaa09c24daf0251c1a"
