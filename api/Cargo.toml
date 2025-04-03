@@ -19,4 +19,4 @@ path = "../atletiek-nu-api"
 
 [dependencies.rpr]
 git = "https://github.com/zeskeertwee/rpr"
-rev = "3e8d9948074855edf37b9acaa09c24daf0251c1a"
+rev = "13250a9c33acc060029dc6c64c6e824876a167d0"
