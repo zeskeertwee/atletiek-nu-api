@@ -194,7 +194,7 @@ checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "api"
-version = "0.2.4-1"
+version = "0.2.5"
 dependencies = [
  "anyhow",
  "atletiek_nu_api",
@@ -4183,7 +4183,7 @@ dependencies = [
 [[package]]
 name = "rpr"
 version = "0.1.1"
-source = "git+https://github.com/zeskeertwee/rpr?rev=3e8d9948074855edf37b9acaa09c24daf0251c1a#3e8d9948074855edf37b9acaa09c24daf0251c1a"
+source = "git+https://github.com/zeskeertwee/rpr?rev=13250a9c33acc060029dc6c64c6e824876a167d0#13250a9c33acc060029dc6c64c6e824876a167d0"
 dependencies = [
  "anyhow",
  "rpr-proto",
@@ -4194,7 +4194,7 @@ dependencies = [
 [[package]]
 name = "rpr-proto"
 version = "0.1.0"
-source = "git+https://github.com/zeskeertwee/rpr?rev=3e8d9948074855edf37b9acaa09c24daf0251c1a#3e8d9948074855edf37b9acaa09c24daf0251c1a"
+source = "git+https://github.com/zeskeertwee/rpr?rev=13250a9c33acc060029dc6c64c6e824876a167d0#13250a9c33acc060029dc6c64c6e824876a167d0"
 dependencies = [
  "anyhow",
  "backtrace",

@@ -43,18 +43,22 @@ async fn main() -> Result<(), rocket::Error> {
         .show_download_progress(true)
         .current_version(cargo_crate_version!())
         .build().unwrap()
-        .update().unwrap()).await.unwrap();
+        .update()).await.unwrap();
 
-
-    if status.updated() {
-        println!("Binary was updated to a new version: {}, please re-start the application", status.version());
-        println!("Press enter to exit the application");
-        let mut line = String::new();
-        std::io::stdin().read_line(&mut line).unwrap();
-        std::process::exit(0);
+    if let Ok(status) = status {
+        if status.updated() {
+            println!("Binary was updated to a new version: {}, please re-start the application", status.version());
+            println!("Press enter to exit the application");
+            let mut line = String::new();
+            std::io::stdin().read_line(&mut line).unwrap();
+            std::process::exit(0);
+        } else {
+            println!("No update is available.")
+        }
     } else {
-        println!("No update is available.")
+        println!("Not updating.")
     }
+
 
     tokio::spawn(async {
         let (req_tx, req_rx) = sync_channel::<(usize, atletiek_nu_api::Request)>(1000);
