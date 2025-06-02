@@ -4,7 +4,7 @@ use scraper::{ElementRef, Selector};
 use serde::{Deserialize, Serialize};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"https://www.athletics.app/atleet/main/([\d]{0,})/"#;
-const REGEX_LOCATION: &'static str = r#"([A-z]{0,})<br><span class="subtext">([A-z]{0,})</span>"#;
+const REGEX_LOCATION: &'static str = r#"([A-z ]{0,})<br><span class="subtext">([A-z ]{0,})</span>"#;
 
 pub type CompetitionRegistrationList = Vec<CompetitionRegistration>;
 
