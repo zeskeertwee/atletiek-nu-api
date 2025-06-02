@@ -4,7 +4,7 @@ use scraper::{ElementRef, Selector};
 use serde::{Deserialize, Serialize};
 
 const REGEX_PARTICIPANT_ID: &'static str = r#"https://www.athletics.app/atleet/main/([\d]{0,})/"#;
-const REGEX_LOCATION: &'static str = r#"([A-z ]{0,})<br><span class="subtext">([A-z ]{0,})</span>"#;
+const REGEX_LOCATION: &'static str = r#"([\w ]{0,})<br><span class="subtext">([\w ]{0,})</span>"#;
 
 pub type CompetitionRegistrationList = Vec<CompetitionRegistration>;
 
@@ -60,19 +60,25 @@ pub fn parse(element: ElementRef) -> anyhow::Result<CompetitionRegistrationList>
 
             let location_element = row.select(&competition_list_location_selector).next().unwrap();
             let place = location_element.text().next().unwrap();
-            let location_img = location_element.select(&img_selector).next().unwrap();
-            let flag_img_src = location_img.value().attr("src").unwrap();
 
-            let captures = re_location.captures_iter(location_img.value().attr("title").unwrap()).next().unwrap();
+            let (flag_img_url, country, continent) = if let Some(location_img) = location_element.select(&img_selector).next() {
+                let flag_img_src = location_img.value().attr("src").unwrap();
+
+                let captures = re_location.captures_iter(location_img.value().attr("title").unwrap()).next().unwrap();
+                (flag_img_src.to_string(), captures[1].trim().to_string(), captures[2].trim().to_string())
+            } else {
+                ("".to_string(), "".to_string(), "".to_string())
+            };
+
 
             participated_in.push(CompetitionRegistration {
                 participant_id,
                 name: text,
                 date,
                 location: CompetitionLocation {
-                    country: captures[1].trim().to_string(),
-                    continent: captures[2].trim().to_string(),
-                    flag_img_url: flag_img_src.to_string(),
+                    country,
+                    continent,
+                    flag_img_url,
                     place: place.trim().to_string()
                 }
             });
