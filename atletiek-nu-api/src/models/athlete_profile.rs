@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::competition_registrations_list::{self, CompetitionRegistrationList};
 use crate::util::round_float_to_digits;
 
-const REGEX_PB_SORT_DATA: &'static str = r#"([0-9]{4})([0-9]{2})([0-9]{2})([\w\s]{0,}) \(([\w]{0,})\)"#;
+const REGEX_PB_SORT_DATA: &'static str = r#"([0-9]{4})([0-9]{2})([0-9]{2})([\w\s-]{0,}) \(([\w]{0,})\)"#;
 const REGEX_PERFORMANCE: &'static str = r#"([0-9]{0,}):([0-9]{0,})[\.,]([0-9]{0,})([h]{0,})"#;
 const REGEX_ATTRIBUTE: &'static str = r#"([\d.]{0,})(cm|kg|gr)"#;
 const REGEX_GRAPH_INFO: &'static str = r#"title: \{text: '([\w\d\- ]+)'\},subtitle: \{text: '(\d+) results'\}"#;
