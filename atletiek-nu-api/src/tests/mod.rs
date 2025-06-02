@@ -206,7 +206,7 @@ async fn test_profile_921275() {
 
 #[tokio::test]
 async fn test_profile_parsing() {
-    let profiles = [862577, 876749, 871514, 862980];
+    let profiles = [862577, 876749, 871514, 862980, 871317];
 
     for i in profiles {
         let start = Instant::now();
