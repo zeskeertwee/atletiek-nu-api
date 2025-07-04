@@ -5,8 +5,7 @@ use chrono::NaiveDate;
 use tokio;
 use regex::Regex;
 use tokio::time::Instant;
-use crate::{get_competition_registrations, get_competition_registrations_web, get_athlete_event_result, get_athlete_profile};
-use crate::components::wind_speed::parse;
+use crate::{get_competition_registrations_web, get_athlete_event_result, get_athlete_profile};
 use crate::models::athlete_event_result::{DnfReason, EventResultItem};
 use crate::models::athlete_profile::EventAttribute;
 use crate::models::registrations_list_web::EventStatus;
@@ -218,5 +217,5 @@ async fn test_profile_parsing() {
 
 #[tokio::test]
 async fn test_multiday_event_parsing_2418938() {
-    let result = get_athlete_event_result(2418938).await.unwrap();
+    let _ = get_athlete_event_result(2418938).await.unwrap();
 }

@@ -273,7 +273,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
 
     let mut timetable = Vec::new();
     for row in html.select(&timetable_selector) {
-        let mut row_elements: Vec<_> = row.select(&row_element_selector).collect();
+        let row_elements: Vec<_> = row.select(&row_element_selector).collect();
         if row_elements.len() == 1 {
             // skip it, it's a multi-day event and row contains only the day.
             continue;
