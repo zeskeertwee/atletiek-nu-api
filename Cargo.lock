@@ -194,7 +194,7 @@ checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
 name = "api"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "atletiek_nu_api",
@@ -477,7 +477,7 @@ dependencies = [
 
 [[package]]
 name = "atletiek_nu_api"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "arc-swap",

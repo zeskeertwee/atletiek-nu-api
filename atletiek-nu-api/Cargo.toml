@@ -1,6 +1,6 @@
 [package]
 name = "atletiek_nu_api"
-version = "0.2.6"
+version = "0.2.7"
 description = "A scraping library for the atletiek.nu website"
 readme = "../README.md"
 edition = "2021"
