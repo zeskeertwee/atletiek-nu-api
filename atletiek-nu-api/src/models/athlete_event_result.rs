@@ -15,6 +15,7 @@ pub struct AthleteEventResults {
     pub name: String,
     pub competition_id: u32,
     pub results: Vec<EventResult>,
+    pub timetable: Vec<TimetableEvent>,
     pub participated_in: CompetitionRegistrationList,
 }
 
@@ -23,6 +24,15 @@ pub struct EventResult {
     pub event_name: String,
     pub event_url: String,
     pub items: Vec<EventResultItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimetableEvent {
+    pub time: chrono::DateTime<chrono::Utc>,
+    pub startlist_url: String,
+    pub event_name: String,
+    pub event_short: String,
+    pub start_group_name: String
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -86,6 +96,11 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let visible_span_selector = Selector::parse("span.tipped").unwrap();
     let name_element_selector = Selector::parse("div.pageTitle").unwrap();
     let competition_element_selector = Selector::parse("div#menubottom > a.hidden-xs").unwrap();
+    let visible_xs_inline_selector = Selector::parse("span.visible-xs-inline").unwrap();
+    let hidden_xs_selector = Selector::parse("span.hidden-xs").unwrap();
+
+    let timetable_selector = Selector::parse("table.chronoloogtabel > tbody > tr").unwrap();
+
     let re_event = Regex::new(&REGEX_EVENT).unwrap();
     let re_competition_id = Regex::new(&REGEX_COMPETITION_ID).unwrap();
 
@@ -256,6 +271,26 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
         })
     }
 
+    let mut timetable = Vec::new();
+    for row in html.select(&timetable_selector) {
+        let mut row_elements: Vec<_> = row.select(&row_element_selector).collect();
 
-    Ok(AthleteEventResults { name, competition_id, results: res, participated_in })
+        let time = chrono::DateTime::from_timestamp(row_elements[0].select(&data_span_selector).next().unwrap().value().attr("data").unwrap().parse().unwrap(), 0).unwrap();
+        let startlist_url = row_elements[0].select(&a_selector).next().unwrap().value().attr("href").unwrap().to_string();
+        let start_group_name = row_elements[1].select(&a_selector).next().unwrap().select(&hidden_xs_selector).next().unwrap().text().next().unwrap().to_string();
+        let event_a = row_elements[2].select(&a_selector).next().unwrap();
+        let event_short = event_a.select(&visible_xs_inline_selector).next().unwrap().text().next().unwrap().to_string();
+        let event_long = event_a.select(&hidden_xs_selector).next().unwrap().text().next().unwrap().to_string();
+
+        timetable.push(TimetableEvent {
+            time,
+            startlist_url,
+            start_group_name,
+            event_short,
+            event_name: event_long
+        })
+    }
+
+
+    Ok(AthleteEventResults { name, competition_id, results: res, timetable, participated_in })
 }

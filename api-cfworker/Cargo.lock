@@ -79,13 +79,12 @@ dependencies = [
 
 [[package]]
 name = "atletiek_nu_api"
-version = "0.2.4"
+version = "0.2.6"
 dependencies = [
  "anyhow",
  "arc-swap",
  "chrono",
  "git-version",
- "lazy_static",
  "log",
  "rand 0.8.5",
  "regex",
@@ -826,12 +825,6 @@ dependencies = [
  "once_cell",
  "wasm-bindgen",
 ]
-
-[[package]]
-name = "lazy_static"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
