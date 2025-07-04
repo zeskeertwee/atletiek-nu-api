@@ -215,3 +215,8 @@ async fn test_profile_parsing() {
         tokio::time::sleep_until(start.add(Duration::from_secs(1))).await;
     }
 }
+
+#[tokio::test]
+async fn test_multiday_event_parsing_2418938() {
+    let result = get_athlete_event_result(2418938).await.unwrap();
+}

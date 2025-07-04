@@ -274,6 +274,10 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteEventResults> {
     let mut timetable = Vec::new();
     for row in html.select(&timetable_selector) {
         let mut row_elements: Vec<_> = row.select(&row_element_selector).collect();
+        if row_elements.len() == 1 {
+            // skip it, it's a multi-day event and row contains only the day.
+            continue;
+        }
 
         let time = chrono::DateTime::from_timestamp(row_elements[0].select(&data_span_selector).next().unwrap().value().attr("data").unwrap().parse().unwrap(), 0).unwrap();
         let startlist_url = row_elements[0].select(&a_selector).next().unwrap().value().attr("href").unwrap().to_string();
