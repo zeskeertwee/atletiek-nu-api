@@ -3,7 +3,7 @@
 ---
 `id`: a valid participant ID
 
-Returns all performances for the participant ID, alongside all competitions they participated in.
+Returns all performances for the participant ID, alongside all competitions they participated in, and the timetable for the competition.
 
 `GET /competitions/registrations/[id]`
 ---
