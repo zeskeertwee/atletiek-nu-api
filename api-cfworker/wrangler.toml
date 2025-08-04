@@ -13,3 +13,7 @@ database_id = "8674e25b-30b6-4447-88c5-74ac8d2c79b2"
 
 [build]
 command = "cargo install -q worker-build && worker-build --release"
+
+[observability.logs]
+enabled = true
+invocation_logs = true
