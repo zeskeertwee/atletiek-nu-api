@@ -117,6 +117,107 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 Response::error("Missing ID", 400)
             }
         })
+        .get_async("/mobile/athletes/profile/:id", |_req, ctx| async move {
+            if let Some(id) = ctx.param("id") {
+                if let Ok(id) = id.parse() {
+                    let result = atletiek_nu_api::get_athlete_profile_mobile(id).await;
+                    match result {
+                        Ok(r) => Response::from_json(&r),
+                        Err(e) => {
+                            console_error!("Error fetching mobile profile: {}", e);
+                            Response::error("Internal error", 500)
+                        }
+                    }
+                } else {
+                    Response::error("Unable to parse ID", 400)
+                }
+            } else {
+                Response::error("Missing ID", 400)
+            }
+        })
+        .get_async("/mobile/competitions/detail/:id", |_req, ctx| async move {
+            if let Some(id) = ctx.param("id") {
+                if let Ok(id) = id.parse() {
+                    match atletiek_nu_api::get_competition_detail_mobile(id).await {
+                        Ok(r) => Response::from_json(&r),
+                        Err(e) => {
+                            let msg = e.to_string();
+                            console_error!("Error fetching competition detail {}: {}", id, msg);
+                            map_scraper_error(&msg)
+                        }
+                    }
+                } else {
+                    Response::error("Unable to parse ID", 400)
+                }
+            } else {
+                Response::error("Missing ID", 400)
+            }
+        })
+        .get_async("/mobile/competitions/program/:id", |_req, ctx| async move {
+            if let Some(id) = ctx.param("id") {
+                if let Ok(id) = id.parse() {
+                    match atletiek_nu_api::get_competition_program_mobile(id).await {
+                        Ok(r) => Response::from_json(&r),
+                        Err(e) => {
+                            let msg = e.to_string();
+                            console_error!("Error fetching competition program {}: {}", id, msg);
+                            map_scraper_error(&msg)
+                        }
+                    }
+                } else {
+                    Response::error("Unable to parse ID", 400)
+                }
+            } else {
+                Response::error("Missing ID", 400)
+            }
+        })
+        .get_async("/mobile/competitions/search", |req, _ctx| async move {
+            if let Ok(url) = req.url() {
+                let pairs: HashMap<String, String> = url
+                    .query_pairs()
+                    .into_iter()
+                    .map(|v| (v.0.to_string(), v.1.to_string()))
+                    .fold(HashMap::new(), |mut acc, v| { acc.insert(v.0, v.1); acc });
+
+                let country = pairs.get("country").map(|v| v.as_str()).unwrap_or("NL");
+
+                let start_date = if let Some(v) = pairs.get("start") {
+                    if let Ok(v) = parse_naive_date(v) {
+                        v
+                    } else {
+                        return Response::error("Malformed start date", 400);
+                    }
+                } else {
+                    return Response::error("Missing start date", 400);
+                };
+
+                let end_date = if let Some(v) = pairs.get("end") {
+                    if let Ok(v) = parse_naive_date(v) {
+                        v
+                    } else {
+                        return Response::error("Malformed end date", 400);
+                    }
+                } else {
+                    return Response::error("Missing end date", 400);
+                };
+
+                if end_date < start_date {
+                    return Response::error("End date is before start date", 400);
+                }
+
+                let query = pairs.get("query").map(|v| v.as_str()).unwrap_or("");
+
+                match atletiek_nu_api::search_competitions_mobile(country, start_date, end_date, query).await {
+                    Ok(r) => Response::from_json(&r),
+                    Err(e) => {
+                        console_error!("Error searching competitions (mobile): {}", e);
+                        Response::error("Internal error", 500)
+                    }
+                }
+            } else {
+                Response::error("Internal error", 500)
+            }
+        })
         .get_async("/v1/competitions/registrations/:id", |_req, ctx| async move {
             if let Some(id) = ctx.param("id") {
                 if let Ok(id) = id.parse::<u32>() {
