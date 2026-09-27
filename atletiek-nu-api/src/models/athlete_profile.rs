@@ -9,7 +9,7 @@ use crate::util::round_float_to_digits;
 
 const REGEX_PB_SORT_DATA: &'static str = r#"([0-9]{4})([0-9]{2})([0-9]{2})([\w\s-]{0,}) \(([\w]{0,})\)"#;
 const REGEX_PERFORMANCE: &'static str = r#"([0-9]{0,}):([0-9]{0,})[\.,]([0-9]{0,})([h]{0,})"#;
-const REGEX_ATTRIBUTE: &'static str = r#"([\d.]{0,})(cm|kg|gr)"#;
+const REGEX_ATTRIBUTE: &'static str = r#"([\d.,]{0,})\s*(cm|kg|gr)"#;
 const REGEX_GRAPH_INFO: &'static str = r#"title: \{text: '([\w\d\- ]+)'\},subtitle: \{text: '(\d+) results'\}"#;
 const REGEX_GRAPH_POINTS: &'static str = r#"\[Date.UTC\((\d{0,}), (\d{0,}), (\d{0,})\),([\d.]{0,})\]"#;
 const REGEX_GRAPH_EVENT_ID: &'static str = r#"tab-pane#([\d-]+)"#;
@@ -221,7 +221,7 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
             };
             let attr = match text {
                 "Everything" => EventAttribute::All,
-                _ => parse_attribute(text).unwrap(),
+                _ => parse_attribute(text).unwrap_or(EventAttribute::All),
             };
             trace!("Found spec {} for event {} -> {:?}", spec, event_id, attr);
             if specs.insert(spec.clone(), attr).is_some() {
@@ -302,7 +302,7 @@ fn parse_attribute(text: &str) -> Option<EventAttribute> {
     let re_attribute = Regex::new(REGEX_ATTRIBUTE).unwrap();
 
     let captures = re_attribute.captures_iter(&text).next()?;
-    let value: f32 = captures[1].parse().ok()?;
+    let value: f32 = captures[1].replace(',', '.').parse().ok()?;
     match captures[2].to_string().as_str() {
         "cm" => Some(EventAttribute::Height(value / 100.0)),
         "gr" => Some(EventAttribute::Weight(value / 1000.0)),
