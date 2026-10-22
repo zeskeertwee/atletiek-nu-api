@@ -14,6 +14,16 @@ fn parse_naive_date(s: &str) -> std::result::Result<NaiveDate, ParseError> {
     NaiveDate::parse_from_str(&s, "%Y-%m-%d")
 }
 
+fn map_scraper_error(msg: &str) -> Result<Response> {
+    if msg.contains("anti-bot challenge") {
+        let mut resp = Response::error("Rate limited by athletics.app, retry later", 503)?;
+        let _ = resp.headers_mut().set("Retry-After", "300");
+        Ok(resp)
+    } else {
+        Response::error(format!("Scraping error: {}", msg), 500)
+    }
+}
+
 fn format_http_timestamp(time: DateTime<Utc>) -> String {
     time.format("%a, %d %b %Y %H:%M:%S %Z").to_string()
 }
@@ -52,12 +62,12 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .get_async("/competitions/results/:id", |_req, ctx| async move {
             if let Some(id) = ctx.param("id") {
                 if let Ok(id) = id.parse() {
-                    let result = atletiek_nu_api::get_athlete_event_result(id).await;
-                    match result {
+                    match atletiek_nu_api::get_athlete_event_result(id).await {
                         Ok(r) => Response::from_json(&r),
                         Err(e) => {
-                            console_error!("Error fetching results: {}", e);
-                            Response::error("Internal error", 500)
+                            let msg = e.to_string();
+                            console_error!("Error fetching results {}: {}", id, msg);
+                            map_scraper_error(&msg)
                         }
                     }
                 } else {
@@ -79,9 +89,10 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 };
                 match atletiek_nu_api::search_athletes(&query).await {
                     Ok(r) => Response::from_json(&r),
-                    Err(e) =>  {
-                        console_error!("Error fetching results: {}", e);
-                        Response::error("Internal error", 500)
+                    Err(e) => {
+                        let msg = e.to_string();
+                        console_error!("Error searching athletes: {}", msg);
+                        map_scraper_error(&msg)
                     }
                 }
             } else {
@@ -91,12 +102,12 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .get_async("/athletes/profile/:id", |_req, ctx| async move {
             if let Some(id) = ctx.param("id") {
                 if let Ok(id) = id.parse() {
-                    let result = atletiek_nu_api::get_athlete_profile(id).await;
-                    match result {
+                    match atletiek_nu_api::get_athlete_profile(id).await {
                         Ok(r) => Response::from_json(&r),
                         Err(e) => {
-                            console_error!("Error fetching results: {}", e);
-                            Response::error("Internal error", 500)
+                            let msg = e.to_string();
+                            console_error!("Error fetching profile {}: {}", id, msg);
+                            map_scraper_error(&msg)
                         }
                     }
                 } else {
@@ -112,8 +123,9 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                     match atletiek_nu_api::get_competition_registrations(&id).await {
                         Ok(r) => Response::from_json(&r),
                         Err(e) => {
-                            console_error!("Error fetching results: {}", e);
-                            Response::error("Internal error", 500)
+                            let msg = e.to_string();
+                            console_error!("Error fetching registrations {}: {}", id, msg);
+                            map_scraper_error(&msg)
                         }
                     }
                 } else {
@@ -129,8 +141,9 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                     match atletiek_nu_api::get_competition_registrations_web(&id).await {
                         Ok(r) => Response::from_json(&r),
                         Err(e) => {
-                            console_error!("Error fetching results: {}", e);
-                            Response::error("Internal error", 500)
+                            let msg = e.to_string();
+                            console_error!("Error fetching web registrations {}: {}", id, msg);
+                            map_scraper_error(&msg)
                         }
                     }
                 } else {
@@ -177,8 +190,9 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 match atletiek_nu_api::search_competitions_for_time_period(start_date, end_date, &query).await {
                     Ok(r) => Response::from_json(&r),
                     Err(e) => {
-                        console_error!("Error searching competitions: {}", e);
-                        Response::error("Internal error", 500)
+                        let msg = e.to_string();
+                        console_error!("Error searching competitions: {}", msg);
+                        map_scraper_error(&msg)
                     }
                 }
             } else {

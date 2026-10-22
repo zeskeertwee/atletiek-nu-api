@@ -11,7 +11,7 @@ wasm-opt = false
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = { version = "0.4.1", features = ["d1"] }
+worker = { version = "0.8.3", features = ["d1"] }
 getrandom = { version = "0.2.15", features = ["js"] }
 urlencoding = "2.1.3"
 console_error_panic_hook = "0.1.7"

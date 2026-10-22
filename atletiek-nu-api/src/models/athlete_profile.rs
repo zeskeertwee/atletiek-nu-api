@@ -9,7 +9,7 @@ use crate::util::round_float_to_digits;
 
 const REGEX_PB_SORT_DATA: &'static str = r#"([0-9]{4})([0-9]{2})([0-9]{2})([\w\s-]{0,}) \(([\w]{0,})\)"#;
 const REGEX_PERFORMANCE: &'static str = r#"([0-9]{0,}):([0-9]{0,})[\.,]([0-9]{0,})([h]{0,})"#;
-const REGEX_ATTRIBUTE: &'static str = r#"([\d.]{0,})(cm|kg|gr)"#;
+const REGEX_ATTRIBUTE: &'static str = r#"([\d.,]{0,})\s*(cm|kg|gr)"#;
 const REGEX_GRAPH_INFO: &'static str = r#"title: \{text: '([\w\d\- ]+)'\},subtitle: \{text: '(\d+) results'\}"#;
 const REGEX_GRAPH_POINTS: &'static str = r#"\[Date.UTC\((\d{0,}), (\d{0,}), (\d{0,})\),([\d.]{0,})\]"#;
 const REGEX_GRAPH_EVENT_ID: &'static str = r#"tab-pane#([\d-]+)"#;
@@ -74,9 +74,16 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
     let re_div_spec = Regex::new(REGEX_DIV_SPECIFICATION).unwrap();
 
     let mut name = String::new();
-    let mut page_title_texts = html.select(&page_title_selector).next().unwrap().text();
+    let mut page_title_texts = html
+        .select(&page_title_selector)
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("missing div.pageTitle on profile page"))?
+        .text();
     while name.is_empty() {
-        name = page_title_texts.next().unwrap().trim().replace("  ", " ");
+        let next = page_title_texts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("empty text in div.pageTitle"))?;
+        name = next.trim().replace("  ", " ");
     }
 
     let competitions = competition_registrations_list::parse(html.root_element())?;
@@ -97,13 +104,16 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
             attribute: None,
         };
 
-        item.not_important = row.value().attr("class").unwrap().contains("notThatImportant");
+        item.not_important = row.value().attr("class")
+            .map(|c| c.contains("notThatImportant"))
+            .unwrap_or(false);
 
         item.event = {
-            let element = cells.next().unwrap();
+            let element = cells.next()
+                .ok_or_else(|| anyhow::anyhow!("missing event cell in PB row"))?;
 
             for i in element.select(&subtext_span_selector) {
-                let text = i.text().next().unwrap().trim().to_string();
+                let text = i.text().next().unwrap_or_default().trim().to_string();
                 if text.is_empty() {
                     continue;
                 }
@@ -125,12 +135,15 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
                 }
             }
 
-            element.text().next().unwrap().trim().to_string()
+            element.text().next().unwrap_or_default().trim().to_string()
         };
 
         {
-            let element = cells.next().unwrap();
-            let performance_text = element.text().next().unwrap().trim();
+            let element = cells.next()
+                .ok_or_else(|| anyhow::anyhow!("missing performance cell in PB row"))?;
+            let performance_text = element.text().next()
+                .ok_or_else(|| anyhow::anyhow!("empty performance cell text"))?
+                .trim();
             item.display_performance = performance_text.to_string();
 
             // prepend 0: for a little bit of regex hacking so the first group always captures
@@ -139,11 +152,12 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
             padded_performance_text.push_str(performance_text);
             padded_performance_text.push_str(",0");
             trace!("Got performance text {} -> {}", performance_text, padded_performance_text);
-            let captures = re_performance.captures_iter(&padded_performance_text).next().unwrap();
+            let captures = re_performance.captures_iter(&padded_performance_text).next()
+                .ok_or_else(|| anyhow::anyhow!("performance regex did not match: {}", padded_performance_text))?;
 
-            let minutes = captures[1].parse::<u32>().unwrap();
-            let seconds = captures[2].parse::<u32>().unwrap();
-            let milliseconds = captures[3].parse::<u32>().unwrap();
+            let minutes = captures[1].parse::<u32>()?;
+            let seconds = captures[2].parse::<u32>()?;
+            let milliseconds = captures[3].parse::<u32>()?;
             let ms_accuracy = captures[3].len();
 
             // contains 'h' if hand measured
@@ -153,26 +167,30 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
             trace!("Parsed to {:.2} hand measured {}", item.performance, item.hand_measured);
 
             if let Some(Some(span)) = element.select(&subtext_span_selector).next().map(|v| v.select(&span_selector).next()) {
-                // wind speed
-                let text = span.text().next().unwrap();
+                let text = span.text().next().unwrap_or_default();
                 item.wind_speed = crate::components::wind_speed::parse(text);
                 trace!("Got wind speed text {} -> {:?}", text, item.wind_speed);
             }
         }
 
         {
-            let element = cells.next().unwrap();
-            let span = element.select(&sort_span_selector).next().unwrap();
-            let data_text = span.value().attr("data").unwrap().to_string();
+            let element = cells.next()
+                .ok_or_else(|| anyhow::anyhow!("missing date/location cell in PB row"))?;
+            let span = element.select(&sort_span_selector).next()
+                .ok_or_else(|| anyhow::anyhow!("missing sortData span in PB date cell"))?;
+            let data_text = span.value().attr("data")
+                .ok_or_else(|| anyhow::anyhow!("missing data attribute on sortData span"))?
+                .to_string();
 
             trace!("Got pb sort text {}", data_text);
 
-            let captures = re_pb_data.captures_iter(&data_text).next().unwrap();
+            let captures = re_pb_data.captures_iter(&data_text).next()
+                .ok_or_else(|| anyhow::anyhow!("PB sort data regex did not match: {}", data_text))?;
             item.date = NaiveDate::from_ymd_opt(
-                captures[1].parse().unwrap(),
-                captures[2].parse().unwrap(),
-                captures[3].parse().unwrap()
-            ).unwrap();
+                captures[1].parse()?,
+                captures[2].parse()?,
+                captures[3].parse()?
+            ).ok_or_else(|| anyhow::anyhow!("invalid date in PB sort data"))?;
             item.location = captures[4].to_string();
             item.country = captures[5].to_string();
         }
@@ -186,15 +204,24 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
 
     for graph in html.select(&graph_selector) {
         for div in graph.select(&spec_div_selector) {
-            let target = div.value().attr("data-target").unwrap();
+            let Some(target) = div.value().attr("data-target") else {
+                trace!("skipping spec div: missing data-target attribute");
+                continue;
+            };
             let (event_id, spec) = {
-                let captures = re_div_spec.captures_iter(target).next().unwrap();
+                let Some(captures) = re_div_spec.captures_iter(target).next() else {
+                    trace!("skipping spec div: div_spec regex did not match: {:?}", target);
+                    continue;
+                };
                 (captures[1].to_string(), captures[2].to_string())
             };
-            let text = div.text().next().unwrap();
+            let Some(text) = div.text().next() else {
+                trace!("skipping spec div: no text content (event_id={}, spec={})", event_id, spec);
+                continue;
+            };
             let attr = match text {
                 "Everything" => EventAttribute::All,
-                _ => parse_attribute(text).unwrap(),
+                _ => parse_attribute(text).unwrap_or(EventAttribute::All),
             };
             trace!("Found spec {} for event {} -> {:?}", spec, event_id, attr);
             if specs.insert(spec.clone(), attr).is_some() {
@@ -211,23 +238,42 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
             let text = html.trim().replace("\t", "").replace("\n", "");
 
             let (event_name, point_count) = {
-                let captures = re_graph_info.captures_iter(&text).next().unwrap();
-                (captures[1].to_string(), captures[2].parse::<usize>().unwrap())
+                let Some(captures) = re_graph_info.captures_iter(&text).next() else {
+                    trace!("skipping graph script: graph_info regex did not match");
+                    continue;
+                };
+                (captures[1].to_string(), captures[2].parse::<usize>().unwrap_or(0))
             };
-            let event_id = re_graph_event_id.captures_iter(&text).next().unwrap()[1].to_string();
-            let specification = re_graph_spec.captures_iter(&text).next().unwrap()[1].to_string();
+            let Some(event_id_cap) = re_graph_event_id.captures_iter(&text).next() else {
+                trace!("skipping graph script: graph_event_id regex did not match (event={})", event_name);
+                continue;
+            };
+            let event_id = event_id_cap[1].to_string();
+            let Some(spec_cap) = re_graph_spec.captures_iter(&text).next() else {
+                trace!("skipping graph script: graph_spec regex did not match (event={}, event_id={})", event_name, event_id);
+                continue;
+            };
+            let specification = spec_cap[1].to_string();
             trace!("Found graph for {}, {} points (event id {}, spec {})", event_name, point_count, event_id, specification);
 
             let mut points = Vec::new();
 
             for point in re_graph_points.captures_iter(&text) {
                 trace!("Point capture {} {} {} {}", point[1].to_string(), point[2].to_string(), point[3].to_string(), point[4].to_string());
-                let date = NaiveDate::from_ymd_opt(
-                    point[1].parse().unwrap(),
-                    point[2].parse::<u32>().unwrap() + 1, // in javascript months are 0-based
-                    point[3].parse().unwrap()
-                ).unwrap();
-                let performance = point[4].parse().unwrap();
+                let (Ok(year), Ok(month), Ok(day), Ok(performance)) = (
+                    point[1].parse::<i32>(),
+                    point[2].parse::<u32>(),
+                    point[3].parse::<u32>(),
+                    point[4].parse::<f32>(),
+                ) else {
+                    trace!("skipping graph point: failed to parse one of year/month/day/performance ({:?},{:?},{:?},{:?})",
+                        &point[1], &point[2], &point[3], &point[4]);
+                    continue;
+                };
+                let Some(date) = NaiveDate::from_ymd_opt(year, month + 1, day) else {
+                    trace!("skipping graph point: invalid date y={} m={} d={}", year, month + 1, day);
+                    continue;
+                }; // JS months are 0-based
 
                 points.push((date, performance));
             }
@@ -237,10 +283,10 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
                     if specification == event_id {
                         EventAttribute::All
                     } else {
-                        specs.get(&specification).unwrap().to_owned()
+                        specs.get(&specification).cloned().unwrap_or(EventAttribute::All)
                     }
                 },
-                event_id: event_id.parse().unwrap(),
+                event_id: event_id.parse().unwrap_or(0),
                 event: event_name,
                 points
             })
@@ -255,8 +301,8 @@ pub fn parse(html: Html) -> anyhow::Result<AthleteProfile> {
 fn parse_attribute(text: &str) -> Option<EventAttribute> {
     let re_attribute = Regex::new(REGEX_ATTRIBUTE).unwrap();
 
-    let captures = re_attribute.captures_iter(&text).next().unwrap();
-    let value: f32 = captures[1].parse().unwrap();
+    let captures = re_attribute.captures_iter(&text).next()?;
+    let value: f32 = captures[1].replace(',', '.').parse().ok()?;
     match captures[2].to_string().as_str() {
         "cm" => Some(EventAttribute::Height(value / 100.0)),
         "gr" => Some(EventAttribute::Weight(value / 1000.0)),

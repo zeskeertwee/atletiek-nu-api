@@ -75,6 +75,13 @@ pub(crate) async fn send_request(url: &str) -> anyhow::Result<String> {
 
     let text = res.text().await?;
 
+    if text.contains("challenges.cloudflare.com/turnstile")
+        || text.contains("Checking your webbrowser")
+        || text.contains("Checking your browser")
+    {
+        anyhow::bail!("athletics.app served an anti-bot challenge page (rate-limited?)");
+    }
+
     if std::env::var("ATN_DUMP_REQ").is_ok() {
         let n = rand::thread_rng().next_u64();
 
