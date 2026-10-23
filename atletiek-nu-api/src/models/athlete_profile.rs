@@ -302,7 +302,7 @@ fn parse_attribute(text: &str) -> Option<EventAttribute> {
     let re_attribute = Regex::new(REGEX_ATTRIBUTE).unwrap();
 
     let captures = re_attribute.captures_iter(&text).next()?;
-    let value: f32 = captures[1].replace(',', '.').parse().ok()?;
+    let value: f32 = captures[1].replace(',', ".").parse().ok()?;
     match captures[2].to_string().as_str() {
         "cm" => Some(EventAttribute::Height(value / 100.0)),
         "gr" => Some(EventAttribute::Weight(value / 1000.0)),

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use std::ops::Add;
 use std::time::Duration;
 use worker::*;
-use atletiek_nu_api::chrono::{NaiveDate, offset, NaiveDateTime, ParseError, DateTime, Utc};
+use atletiek_nu_api::chrono::{NaiveDate, offset, ParseError, DateTime, Utc};
 use urlencoding;
 use console_error_panic_hook;
 
@@ -29,7 +28,7 @@ fn format_http_timestamp(time: DateTime<Utc>) -> String {
 }
 
 #[event(fetch)]
-async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
+async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
 
     let poke_cache = if let Ok(Some(header)) = req.headers().get("X-poke-cache") {
@@ -44,7 +43,7 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         console_log!("Ignoring cache");
     } else {
         match cache.get(&req, false).await {
-            Ok(Some(mut r)) => {
+            Ok(Some(r)) => {
                 console_log!("Response from cache");
                 return Ok(r);
             },
@@ -56,7 +55,7 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
 
     let router = Router::new();
 
-    let mut cache_validity = Duration::from_secs(HOUR_S);
+    let cache_validity = Duration::from_secs(HOUR_S);
 
     let mut response = router
         .get_async("/competitions/results/:id", |_req, ctx| async move {
@@ -153,7 +152,7 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
                 Response::error("Missing ID", 400)
             }
         })
-        .get_async("/competitions/search", |req, ctx| async move {
+        .get_async("/competitions/search", |req, _ctx| async move {
             if let Ok(url) = req.url() {
                 let pairs: HashMap<String, String> = url
                     .query_pairs()
@@ -202,15 +201,15 @@ async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
         .run(req.clone().unwrap(), env)
         .await?;
 
-    response.headers_mut().set("X-ATNAPI-Version", GIT_VERSION);
+    let _ = response.headers_mut().set("X-ATNAPI-Version", GIT_VERSION);
 
     let mut cache_resp = response.cloned().unwrap();
     let now = offset::Utc::now();
     let expires_in = now + cache_validity;
     let timestamp = format_http_timestamp(expires_in);
     console_log!("HTTP timestamp {}", timestamp);
-    cache_resp.headers_mut().set("Expires", &timestamp);
-    cache.put(&req, cache_resp).await;
+    let _ = cache_resp.headers_mut().set("Expires", &timestamp);
+    let _ = cache.put(&req, cache_resp).await;
 
     Ok(response)
 }
