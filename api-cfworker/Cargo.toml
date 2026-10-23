@@ -11,7 +11,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = { version = "0.8.3", features = ["d1"] }
+worker = { version = "0.8.3" }
 getrandom = { version = "0.3", features = ["wasm_js"] }
 getrandom02 = { package = "getrandom", version = "0.2", features = ["js"] }
 urlencoding = "2.1.3"
