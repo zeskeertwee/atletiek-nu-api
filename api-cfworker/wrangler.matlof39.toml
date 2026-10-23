@@ -1,0 +1,19 @@
+name = "atletiek-nu-api"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-09-23"
+account_id = "fc75876132ba8bfcc175f471af6aa2ce"
+send_metrics = false
+
+# Deploy to workers.dev (no custom domain needed)
+workers_dev = true
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+head_sampling_rate = 1
