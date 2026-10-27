@@ -1,7 +1,4 @@
-use atletiek_nu_api::{
-    chrono::NaiveDate, get_competition_registrations, get_competitions_for_time_period, scraper,
-    search_athletes, search_competitions_for_time_period, get_athlete_event_result, get_athlete_profile
-};
+use atletiek_nu_api::{chrono::NaiveDate, get_competition_registrations, get_competitions_for_time_period, scraper, search_athletes, search_competitions_for_time_period, get_athlete_event_result, get_athlete_profile, get_athlete_profile_mobile, get_competition_detail_mobile};
 use std::sync::mpsc::{sync_channel, Receiver};
 use tokio;
 
@@ -33,7 +30,8 @@ async fn main() {
     //let b = atletiek_nu_api::get_competition_registrations_web(&38774).await.unwrap();
     //dbg!(b);
 
-    let a = get_athlete_profile(872863).await.unwrap();
+    //let a = get_athlete_profile_mobile(872863).await.unwrap();
+    let a = get_competition_detail_mobile(40118).await.unwrap();
     dbg!(a);
 
     print_channel_updates(req_rx, sta_rx);

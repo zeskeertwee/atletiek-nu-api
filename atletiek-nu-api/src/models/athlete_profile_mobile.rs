@@ -9,6 +9,7 @@
 //!   - `div.tabs.graphTabs > div[id^=tab-eventgraph-]` = history tabs per event
 //!   - Each history tab contains a `div.list-athlete-results > ul` with performances
 
+use chrono::NaiveDate;
 use log::trace;
 use regex::Regex;
 use scraper::{Html, Selector};
@@ -33,7 +34,7 @@ pub struct MobilePersonalBest {
     pub hand_measured: bool,
     pub location: String,
     pub country_code: String,
-    pub date: String,
+    pub date: NaiveDate,
     pub not_important: bool,
     pub indoor: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -50,7 +51,7 @@ pub struct PerformanceHistoryEntry {
     pub hand_measured: bool,
     pub location: String,
     pub country_code: String,
-    pub date: String,
+    pub date: NaiveDate,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub delta: Option<String>,
 }
@@ -64,7 +65,7 @@ struct ParsedLi {
     hand_measured: bool,
     location: String,
     country_code: String,
-    date: String,
+    date: NaiveDate,
     not_important: bool,
     indoor: bool,
     attribute: Option<String>,
@@ -178,12 +179,12 @@ fn parse_li(li: &scraper::ElementRef) -> Option<ParsedLi> {
         });
 
     // Date and location
-    let mut date = String::new();
+    let mut date_str = String::new();
     let mut location = String::new();
     let mut country_code = String::new();
 
     if let Some(loc_div) = li.select(&location_sel).next() {
-        date = loc_div
+        date_str = loc_div
             .text()
             .filter(|t| !t.trim().is_empty())
             .next()
@@ -220,7 +221,7 @@ fn parse_li(li: &scraper::ElementRef) -> Option<ParsedLi> {
         hand_measured,
         location,
         country_code,
-        date,
+        date: NaiveDate::parse_from_str(&date_str, "%d/%m/%Y").unwrap(),
         not_important,
         indoor,
         attribute,
