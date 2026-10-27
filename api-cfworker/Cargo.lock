@@ -2306,6 +2306,7 @@ dependencies = [
  "getrandom 0.3.4",
  "git-version",
  "urlencoding",
+ "wasm-bindgen",
  "worker",
 ]
 

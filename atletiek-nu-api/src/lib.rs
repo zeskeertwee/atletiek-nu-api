@@ -14,6 +14,10 @@ use urlencoding;
 
 pub use crate::models::athlete_event_result::AthleteEventResults;
 use crate::models::athlete_list::AthleteList;
+pub use crate::models::athlete_profile_mobile::MobileAthleteProfile;
+pub use crate::models::competition_detail_mobile::MobileCompetitionDetail;
+pub use crate::models::competition_program_mobile::MobileCompetitionProgram;
+pub use crate::models::competitions_list_mobile::MobileCompetitionsList;
 use crate::models::registrations_list::RegistrationsList;
 use crate::traits::CompetitionID;
 pub use chrono;
@@ -137,6 +141,81 @@ pub async fn get_athlete_profile(athlete_id: u32) -> anyhow::Result<AthleteProfi
     let url = format!("https://www.athletics.app/atleet/profiel/{}", athlete_id);
     let body = send_request(&url).await?;
     models::athlete_profile::parse(Html::parse_document(&body))
+}
+
+/// Fetch an athlete's profile using the mobile endpoint (bypasses Cloudflare Turnstile).
+///
+/// This makes two requests:
+/// 1. `do=get` to retrieve the athlete's name
+/// 2. `do=records` to retrieve personal bests and per-event performance history
+///
+/// The mobile endpoint provides richer data than the web profile, including
+/// wind speed, location, and country for each performance in the history.
+pub async fn get_athlete_profile_mobile(athlete_id: u32) -> anyhow::Result<MobileAthleteProfile> {
+    // Fetch athlete name from the profile endpoint
+    let name_url = format!(
+        "https://www.athletics.app/athleteapp.php?page=athlete&do=get&ranglijst_score_koppel_id={}&language=en_GB&version=1.16",
+        athlete_id
+    );
+    let name_body = send_request(&name_url).await?;
+    let name = models::athlete_profile_mobile::parse_name(Html::parse_fragment(&name_body))?;
+
+    // Fetch records (personal bests + history)
+    let records_url = format!(
+        "https://www.athletics.app/athleteapp.php?page=athlete&do=records&ranglijst_score_koppel_id={}&language=en_GB&version=1.16",
+        athlete_id
+    );
+    let records_body = send_request(&records_url).await?;
+    models::athlete_profile_mobile::parse(Html::parse_fragment(&records_body), name)
+}
+
+/// Search for competitions using the mobile endpoint (bypasses Cloudflare Turnstile).
+///
+/// Unlike `search_competitions_for_time_period` which uses `feeder.php` (blocked by
+/// Cloudflare), this uses the `athleteapp.php` mobile endpoint.
+pub async fn search_competitions_mobile(
+    country: &str,
+    start: NaiveDate,
+    end: NaiveDate,
+    q: &str,
+) -> anyhow::Result<MobileCompetitionsList> {
+    let start_ts = NaiveDateTime::new(start, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
+    let end_ts = NaiveDateTime::new(end, NaiveTime::from_hms_opt(0, 0, 0).unwrap()).and_utc().timestamp();
+    let url = format!(
+        "https://www.athletics.app/athleteapp.php?page=events&do=searchresults&country_iso2={}&search={}&predefinedSearchTemplate=0&startDate={}&endDate={}&language=en_GB&version=1.16&improvePerformance=0",
+        urlencoding::encode(country),
+        urlencoding::encode(q),
+        start_ts,
+        end_ts
+    );
+    let body = send_request(&url).await?;
+    models::competitions_list_mobile::parse(Html::parse_fragment(&body))
+}
+
+/// Fetch competition detail using the mobile endpoint (bypasses Cloudflare Turnstile).
+///
+/// Returns metadata (name, date, location, description) and the categories table
+/// showing which age groups can participate with their available events and pricing.
+pub async fn get_competition_detail_mobile(event_id: u32) -> anyhow::Result<MobileCompetitionDetail> {
+    let url = format!(
+        "https://www.athletics.app/athleteapp.php?page=event&do=get&event_id={}&language=en_GB&version=1.16",
+        event_id
+    );
+    let body = send_request(&url).await?;
+    models::competition_detail_mobile::parse(Html::parse_fragment(&body))
+}
+
+/// Fetch competition program using the mobile endpoint (bypasses Cloudflare Turnstile).
+///
+/// Returns the full program: gender groups → age categories → event groups → events.
+/// More detailed than the categories table from `get_competition_detail_mobile`.
+pub async fn get_competition_program_mobile(event_id: u32) -> anyhow::Result<MobileCompetitionProgram> {
+    let url = format!(
+        "https://www.athletics.app/athleteapp.php?page=event&do=program&event_id={}&language=en_GB&version=1.16",
+        event_id
+    );
+    let body = send_request(&url).await?;
+    models::competition_program_mobile::parse(Html::parse_fragment(&body))
 }
 
 pub async fn get_competitions_for_time_period(
