@@ -31,7 +31,7 @@ async fn main() {
     //dbg!(b);
 
     //let a = get_athlete_profile_mobile(872863).await.unwrap();
-    let a = get_competition_detail_mobile(40118).await.unwrap();
+    let a = get_athlete_profile(878921).await.unwrap();
     dbg!(a);
 
     print_channel_updates(req_rx, sta_rx);
