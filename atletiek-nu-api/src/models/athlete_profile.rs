@@ -10,7 +10,9 @@ use crate::util::round_float_to_digits;
 const REGEX_PB_SORT_DATA: &'static str = r#"([0-9]{4})([0-9]{2})([0-9]{2})([\w\s-]{0,}) \(([\w]{0,})\)"#;
 const REGEX_PERFORMANCE: &'static str = r#"([0-9]{0,}):([0-9]{0,})[\.,]([0-9]{0,})([h]{0,})"#;
 const REGEX_ATTRIBUTE: &'static str = r#"([\d.,]{0,})\s*(cm|kg|gr)"#;
-const REGEX_GRAPH_INFO: &'static str = r#"title: \{text: '([\w\d\- ]+)'\},subtitle: \{text: '(\d+) results'\}"#;
+// The event name may contain a dot, e.g. "10.000 meter" (Dutch thousands separator).
+// Without it in the character class the whole graph is silently skipped.
+const REGEX_GRAPH_INFO: &'static str = r#"title: \{text: '([\w\d\- .]+)'\},subtitle: \{text: '(\d+) results'\}"#;
 const REGEX_GRAPH_POINTS: &'static str = r#"\[Date.UTC\((\d{0,}), (\d{0,}), (\d{0,})\),([\d.]{0,})\]"#;
 const REGEX_GRAPH_EVENT_ID: &'static str = r#"tab-pane#([\d-]+)"#;
 const REGEX_GRAPH_SPECIFICATION: &'static str = r#"history-scores_([\w\d-]+)_1"#;
@@ -308,5 +310,47 @@ fn parse_attribute(text: &str) -> Option<EventAttribute> {
         "gr" => Some(EventAttribute::Weight(value / 1000.0)),
         "kg" => Some(EventAttribute::Weight(value)),
         x => { error!("Unexpected value in capture group: {}", x); None },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Builds a minimal profile page containing a single graph tab.
+    fn profile_with_graph(script: &str) -> Html {
+        Html::parse_document(&format!(
+            r#"<html><body>
+                <div class="pageTitle">Test Atleet</div>
+                <div id="graphTabs"><div><script>{}</script></div></div>
+            </body></html>"#,
+            script
+        ))
+    }
+
+    #[test]
+    fn graph_event_name_with_dot_is_parsed() {
+        // athletics.app names the 10 km event "10.000 meter". The dot used to make
+        // REGEX_GRAPH_INFO fail, which silently dropped the graph from the response
+        // (issue #17).
+        let script = "title: {text: '10.000 meter'},subtitle: {text: '12 results'}\
+                      tab-pane#42 history-scores_42_1 [Date.UTC(2020, 4, 3),1880.5]";
+        let profile = parse(profile_with_graph(script)).unwrap();
+
+        assert_eq!(profile.graphs.len(), 1);
+        assert_eq!(profile.graphs[0].event, "10.000 meter");
+        assert_eq!(profile.graphs[0].event_id, 42);
+        assert_eq!(profile.graphs[0].points.len(), 1);
+    }
+
+    #[test]
+    fn graph_event_name_without_dot_still_parses() {
+        let script = "title: {text: '100 meter'},subtitle: {text: '3 results'}\
+                      tab-pane#6 history-scores_6_1 [Date.UTC(2019, 0, 5),12.34]";
+        let profile = parse(profile_with_graph(script)).unwrap();
+
+        assert_eq!(profile.graphs.len(), 1);
+        assert_eq!(profile.graphs[0].event, "100 meter");
+        assert_eq!(profile.graphs[0].event_id, 6);
     }
 }
